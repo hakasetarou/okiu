@@ -205,10 +205,68 @@ lot.spaces.forEach(space => {
     modal.style.display = 'block';
 }
 function updateStats() {
-    // ... (この中身は変更なし)
+    // HTMLから統計情報を表示するための要素を取得
+    const totalSpacesEl = document.getElementById('totalSpaces');
+    const availableSpacesEl = document.getElementById('availableSpaces');
+    const occupancyRateEl = document.getElementById('occupancyRate');
+    const lastUpdatedEl = document.getElementById('lastUpdated');
+
+    // データの準備ができていなければ、何もせずに終了
+    if (!parkingData || parkingData.length === 0) return;
+
+    // ----- 統計情報の計算 -----
+    // 1. reduceメソッドを使って、全駐車場の総台数と総空き台数を一度に計算する
+    const totals = parkingData.reduce((acc, lot) => {
+        acc.capacity += lot.capacity;
+        acc.available += lot.available;
+        return acc;
+    }, { capacity: 0, available: 0 }); // 初期値
+
+    const totalCapacity = totals.capacity;
+    const totalAvailable = totals.available;
+
+    // 2. 使用率を計算する (0で割らないように注意)
+    const occupancyRate = totalCapacity > 0 
+        ? Math.round(((totalCapacity - totalAvailable) / totalCapacity) * 100)
+        : 0;
+
+    // 3. 最終更新時刻をフォーマットする
+    const now = new Date();
+    const lastUpdatedText = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+    // ----- 計算結果を画面に反映 -----
+    totalSpacesEl.textContent = totalCapacity;
+    availableSpacesEl.textContent = totalAvailable;
+    occupancyRateEl.textContent = `${occupancyRate}%`;
+    lastUpdatedEl.textContent = `最終更新: ${lastUpdatedText}`;
 }
 function displayMyParkingStatus() {
-    // ... (この中身は変更なし)
+    const statusContainer = document.getElementById('myParkingStatus');
+    if (!statusContainer) return;
+
+    if (myParkingInfo) {
+        // 駐車している場合
+        const lot = parkingData.find(p => p.id === myParkingInfo.lot_id);
+        const lotName = lot ? lot.name : '不明';
+        const elapsedTime = getElapsedTime(myParkingInfo.start_time);
+
+        statusContainer.innerHTML = `
+            <div class="my-status-card">
+                <h4>現在の駐車状況</h4>
+                <p><strong>場所:</strong> ${lotName} - ${myParkingInfo.space_id}番</p>
+                <p><strong>経過時間:</strong> ${elapsedTime}</p>
+                <button id="checkoutButton" class="checkout-btn">退庫する</button>
+            </div>
+        `;
+        statusContainer.classList.remove('hidden');
+
+        // 今生成した「退庫する」ボタンにイベントを設定
+        document.getElementById('checkoutButton').addEventListener('click', processSpaceCheckout);
+    } else {
+        // 駐車していない場合
+        statusContainer.innerHTML = '';
+        statusContainer.classList.add('hidden');
+    }
 }
 async function processSpaceCheckin(lotId, spaceId) {
     if (!currentUser) return alert('ログイン情報が見つかりません。');
@@ -250,7 +308,33 @@ async function processSpaceCheckin(lotId, spaceId) {
     }
 }
 async function processSpaceCheckout() {
-    // ... (この中身は変更なし)
+    if (!currentUser || !myParkingInfo) {
+        return alert('駐車情報が見つかりません。');
+    }
+
+    if (!confirm('本当に退庫しますか？')) {
+        return;
+    }
+
+    try {
+        // STEP 1で作ったAPIを呼び出す
+        await apiRequest('/api/parking/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: currentUser.studentId })
+        });
+
+        alert('退庫が完了しました。');
+
+        // 自分の駐車情報をリセット
+        myParkingInfo = null;
+        // データを再取得して画面全体を更新
+        parkingData = await apiRequest('/api/parking-data');
+        refreshUI();
+
+    } catch (error) {
+        alert(`エラー: ${error.message}`);
+    }
 }
 function getStatusClass(available, capacity) { if (available === 0) return 'full'; const rate = available / capacity; if (rate > 0.3) return 'available'; return 'limited'; }
 function getStatusText(available, capacity) { if (available === 0) return '満車'; const rate = available / capacity; if (rate > 0.3) return '空きあり'; return '残りわずか'; }

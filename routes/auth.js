@@ -28,39 +28,45 @@ router.post('/register', async (req, res) => {
     }
 });
 
-// 2. ログインAPI (データベース対応版)
+// 2. ログインAPI (駐車状況の確認機能付き)
 router.post('/login', async (req, res) => {
     const { studentId, password } = req.body;
     try {
-        const query = 'SELECT * FROM users WHERE student_id = $1';
-        const result = await pool.query(query, [studentId]);
+        const userQuery = 'SELECT * FROM users WHERE student_id = $1';
+        const userResult = await pool.query(userQuery, [studentId]);
 
-        if (result.rows.length === 0) {
-            // ユーザーが見つからない
+        if (userResult.rows.length === 0) {
             return res.status(401).json({ message: '学籍番号またはパスワードが正しくありません。' });
         }
 
-        const user = result.rows[0];
-        // パスワードの比較（現状は平文比較。将来的にはハッシュ化が望ましい）
-        if (user.password === password) {
-            console.log('User logged in from DB:', { studentId: user.student_id, name: user.name });
-            // ログイン成功時に返すユーザー情報からパスワードを除外する
-            res.json({
-                message: 'ログイン成功',
-                user: { studentId: user.student_id, name: user.name }
-                // myParkingInfoは別途実装が必要
-            });
-        } else {
-            // パスワードが違う
-            res.status(401).json({ message: '学籍番号またはパスワードが正しくありません。' });
+        const user = userResult.rows[0];
+        if (user.password !== password) {
+            return res.status(401).json({ message: '学籍番号またはパスワードが正しくありません。' });
         }
+
+        // ★★★ ここからが新しい処理 ★★★
+        // ログインしたユーザーの駐車情報をparking_sessionsテーブルから探す
+        const sessionQuery = 'SELECT * FROM parking_sessions WHERE user_id = $1';
+        const sessionResult = await pool.query(sessionQuery, [user.student_id]);
+
+        // 駐車情報が見つかればmyParkingInfoに設定、なければnull
+        const myParkingInfo = sessionResult.rows.length > 0 ? sessionResult.rows[0] : null;
+        // ★★★ ここまでが新しい処理 ★★★
+
+        console.log('User logged in from DB:', { studentId: user.student_id, name: user.name });
+
+        // フロントエンドに返す情報に、myParkingInfoを追加する
+        res.json({
+            message: 'ログイン成功',
+            user: { studentId: user.student_id, name: user.name },
+            myParkingInfo: myParkingInfo // ★★★ この行が重要！ ★★★
+        });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'データベースエラーが発生しました。' });
     }
 });
-
-
 // ...駐車場関連のAPIは、同様にデータベースに問い合わせる形に修正が必要です...
 
 // 3. 駐車場データを取得するAPI (各スペースの情報も追加)
@@ -141,5 +147,27 @@ router.post('/parking/checkin', async (req, res) => {
     }
 });
 
+// 5. 退庫（チェックアウト）処理を行うAPI
+router.post('/parking/checkout', async (req, res) => {
+    const { userId } = req.body;
+
+    try {
+        // 1. データベースからそのユーザーの駐車記録を削除する
+        const deleteQuery = 'DELETE FROM parking_sessions WHERE user_id = $1 RETURNING *';
+        const result = await pool.query(deleteQuery, [userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: '駐車情報が見つかりませんでした。' });
+        }
+
+        console.log('User checked out:', result.rows[0]);
+        // 成功したことをフロントエンドに伝える
+        res.json({ message: '退庫が完了しました。' });
+
+    } catch (error) {
+        console.error('Check-out failed:', error);
+        res.status(500).json({ message: '退庫処理中にエラーが発生しました。' });
+    }
+});
 // module.exports はファイルの最後に記述
 module.exports = router;
