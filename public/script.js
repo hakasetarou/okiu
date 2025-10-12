@@ -294,7 +294,7 @@ async function processSpaceCheckin(lotId, spaceId) {
 
         // 成功したら、自分の駐車情報を更新
         myParkingInfo = newParkingInfo;
-        alert('駐車が完了しました。');
+       showNotification('駐車が完了しました。');
 
         // モーダルを閉じて、画面全体を最新の状態に更新
         closeDetailModal();
@@ -304,7 +304,7 @@ async function processSpaceCheckin(lotId, spaceId) {
 
     } catch (error) {
         // バックエンドから送られてきたエラーメッセージをそのまま表示
-        alert(`エラー: ${error.message}`);
+        showNotification(`エラー: ${error.message}`, 'error');
     }
 }
 async function processSpaceCheckout() {
@@ -324,7 +324,7 @@ async function processSpaceCheckout() {
             body: JSON.stringify({ userId: currentUser.studentId })
         });
 
-        alert('退庫が完了しました。');
+showNotification('退庫が完了しました。');
 
         // 自分の駐車情報をリセット
         myParkingInfo = null;
@@ -333,15 +333,28 @@ async function processSpaceCheckout() {
         refreshUI();
 
     } catch (error) {
-        alert(`エラー: ${error.message}`);
+showNotification(`エラー: ${error.message}`, 'error');
     }
 }
 function getStatusClass(available, capacity) { if (available === 0) return 'full'; const rate = available / capacity; if (rate > 0.3) return 'available'; return 'limited'; }
 function getStatusText(available, capacity) { if (available === 0) return '満車'; const rate = available / capacity; if (rate > 0.3) return '空きあり'; return '残りわずか'; }
 function closeDetailModal() { const modal = document.getElementById('lotDetailModal'); if (modal) modal.style.display = 'none'; }
 function getElapsedTime(startTime) { const diffMinutes = Math.floor((new Date() - new Date(startTime)) / 60000); const hours = Math.floor(diffMinutes / 60); const minutes = diffMinutes % 60; return `${hours > 0 ? hours + '時間' : ''} ${minutes}分`; }
-function showNotification(message, type) { /* ... (変更なし) ... */ }
-function refreshUI() {
+function showNotification(message, type = 'success') { // 'success' or 'error'
+    const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`; // 成功かエラーかでクラスを分ける
+    toast.textContent = message;
+
+    container.appendChild(toast);
+
+    // 3秒後に通知を自動で消す
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}function refreshUI() {
     if (!currentUser) return; // ログイン状態でなければ何もしない
 
     renderParkingLots();      // 駐車場一覧を描画

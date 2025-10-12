@@ -255,3 +255,38 @@ body {
 .checkout-btn:hover {
     background-color: #d32f2f;
 }
+/* --- 通知 (トースト) のスタイル --- */
+#notification-container {
+    position: fixed; /* 画面に固定 */
+    top: 20px;
+    right: 20px;
+    z-index: 1000; /* 他の要素より手前に表示 */
+}
+
+.toast {
+    background-color: #28a745; /* 成功時の緑 */
+    color: white;
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0; /* 初期状態は透明 */
+    transform: translateX(100%);
+    animation: slideInAndOut 3s forwards;
+}
+
+.toast.error {
+    background-color: #dc3545; /* エラー時の赤 */
+}
+
+/* 通知のアニメーション */
+@keyframes slideInAndOut {
+    0%, 100% {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    10%, 80% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
