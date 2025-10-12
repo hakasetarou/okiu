@@ -1,5 +1,7 @@
 // public/script.js
 
+const API_BASE_URL = 'http://localhost:3000';
+
 // =================================================================================
 // グローバル変数 (変更なし)
 // =================================================================================
@@ -20,7 +22,7 @@ const errorMessage = document.getElementById('errorMessage');
 // =================================================================================
 async function apiRequest(url, options = {}) {
     try {
-        const response = await fetch(url, options);
+        const response = await fetch(API_BASE_URL + url, options);
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -129,8 +131,36 @@ async function initializeSystem() {
 // =================================================================================
 // 駐車場関連の処理 (変更なし)
 // =================================================================================
-function renderParkingLots() { 
-    // ... (この中身は変更なし)
+function renderParkingLots() {
+    const lotsContainer = document.getElementById('parkingLotList');
+    if (!lotsContainer) return; // 要素がなければ処理を中断
+
+    lotsContainer.innerHTML = ''; // 表示エリアを一度空にする
+
+    if (!parkingData || parkingData.length === 0) {
+        lotsContainer.innerHTML = '<p>駐車場データがありません。サーバーからデータを取得できませんでした。</p>';
+        return;
+    }
+
+    // 取得した駐車場データ一つひとつに対してHTML要素を生成する
+    parkingData.forEach(lot => {
+        const statusClass = getStatusClass(lot.available, lot.capacity);
+        const statusText = getStatusText(lot.available, lot.capacity);
+
+        const lotElement = document.createElement('div');
+        lotElement.className = `parking-lot-item ${statusClass}`;
+        lotElement.innerHTML = `
+            <h3>${lot.name}</h3>
+            <p>空き状況: <span class="status-text">${statusText}</span></p>
+            <p class="lot-stats">(${lot.available} / ${lot.capacity}台)</p>
+        `;
+        
+        // 各駐車場要素にクリックイベントを追加
+        lotElement.addEventListener('click', () => showLotDetail(lot.id));
+        
+        // 生成したHTMLを画面に追加
+        lotsContainer.appendChild(lotElement);
+    });
 }
 function showLotDetail(lotId) {
     // ... (この中身は変更なし)
@@ -152,7 +182,13 @@ function getStatusText(available, capacity) { if (available === 0) return '満�
 function closeDetailModal() { const modal = document.getElementById('lotDetailModal'); if (modal) modal.style.display = 'none'; }
 function getElapsedTime(startTime) { const diffMinutes = Math.floor((new Date() - new Date(startTime)) / 60000); const hours = Math.floor(diffMinutes / 60); const minutes = diffMinutes % 60; return `${hours > 0 ? hours + '時間' : ''} ${minutes}分`; }
 function showNotification(message, type) { /* ... (変更なし) ... */ }
-function refreshUI() { /* ... (変更なし) ... */ }
+function refreshUI() {
+    if (!currentUser) return; // ログイン状態でなければ何もしない
+
+    renderParkingLots();      // 駐車場一覧を描画
+    displayMyParkingStatus(); // 自分の駐車状況を更新 (この関数は後で実装)
+    updateStats();            // 全体の統計情報を更新 (この関数は後で実装)
+}
 
 
 // =================================================================================
