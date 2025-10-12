@@ -178,3 +178,45 @@ body {
     .stats-bar { flex-direction: column; gap: 15px; }
     .parking-map-container { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); }
 }
+/* --- 駐車場詳細モーダルのスタイル --- */
+.modal-instruction {
+    font-size: 0.9em;
+    color: #666;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.parking-map-container {
+    display: grid;
+    /* 1列の幅を最低60pxとし、コンテナ幅に合わせて自動で列数を調整する */
+    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    gap: 10px; /* マス目間の余白 */
+    max-height: 60vh; /* 高さが画面を超えないように */
+    overflow-y: auto; /* 高さが超えたらスクロールバーを出す */
+    background-color: #f0f2f5;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.parking-space {
+    background-color: #4caf50; /* 空きスペース: 緑 */
+    color: white;
+    aspect-ratio: 1 / 1; /* 正方形にする */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.parking-space:hover {
+    transform: scale(1.1);
+}
+
+.parking-space.parked {
+    background-color: #f44336; /* 駐車中スペース: 赤 */
+    cursor: not-allowed;
+    color: #f0f0f0;
+}

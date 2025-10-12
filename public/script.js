@@ -163,7 +163,46 @@ function renderParkingLots() {
     });
 }
 function showLotDetail(lotId) {
-    // ... (この中身は変更なし)
+    // クリックされた駐車場の完全なデータをparkingDataの中から探す
+    const lot = parkingData.find(p => p.id === lotId);
+    if (!lot) {
+        console.error('指定された駐車場が見つかりません:', lotId);
+        return;
+    }
+
+    // モーダルウィンドウのHTML要素を取得
+    const modal = document.getElementById('lotDetailModal');
+    const modalTitle = document.getElementById('lotDetailTitle');
+    const parkingMap = document.getElementById('parkingMap');
+
+    // モーダルのタイトルを更新
+    modalTitle.textContent = `${lot.name} の駐車状況`;
+
+    // 古いマップが残っていたら消去する
+    parkingMap.innerHTML = '';
+
+    // スペース情報(spaces配列)を元に、駐車スペースのマス目を1つずつ生成
+lot.spaces.forEach(space => {
+    const spaceElement = document.createElement('div');
+    spaceElement.className = 'parking-space';
+    spaceElement.textContent = space.id;
+
+    // 駐車中かどうかでスタイルを分ける
+    if (space.isParked) {
+        spaceElement.classList.add('parked');
+    } else {
+        // ★★★★★ ここから追加 ★★★★★
+        // 空いているスペースの場合のみ、クリックイベントを追加する
+        spaceElement.addEventListener('click', () => {
+            processSpaceCheckin(lot.id, space.id);
+        });
+        // ★★★★★ ここまで追加 ★★★★★
+    }
+
+    // 生成したマス目をマップに追加
+    parkingMap.appendChild(spaceElement);
+});    // 全ての準備が整ったら、モーダルを表示する
+    modal.style.display = 'block';
 }
 function updateStats() {
     // ... (この中身は変更なし)
@@ -172,7 +211,43 @@ function displayMyParkingStatus() {
     // ... (この中身は変更なし)
 }
 async function processSpaceCheckin(lotId, spaceId) {
-    // ... (この中身は変更なし)
+    if (!currentUser) return alert('ログイン情報が見つかりません。');
+
+    // 自分が既に駐車しているか確認
+    if (myParkingInfo) {
+        return alert(`既に ${myParkingInfo.lotId} の ${myParkingInfo.spaceId}番 に駐車済みです。`);
+    }
+
+    if (!confirm(`${lotId} の ${spaceId}番 に駐車しますか？`)) {
+        return; // キャンセルされたら何もしない
+    }
+
+    try {
+        // STEP 1で作ったAPIを呼び出す
+        const newParkingInfo = await apiRequest('/api/parking/checkin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: currentUser.studentId, // ログイン中のユーザーID
+                lotId: lotId,
+                spaceId: spaceId
+            })
+        });
+
+        // 成功したら、自分の駐車情報を更新
+        myParkingInfo = newParkingInfo;
+        alert('駐車が完了しました。');
+
+        // モーダルを閉じて、画面全体を最新の状態に更新
+        closeDetailModal();
+        // データを再取得してUIを更新
+        parkingData = await apiRequest('/api/parking-data');
+        refreshUI();
+
+    } catch (error) {
+        // バックエンドから送られてきたエラーメッセージをそのまま表示
+        alert(`エラー: ${error.message}`);
+    }
 }
 async function processSpaceCheckout() {
     // ... (この中身は変更なし)
