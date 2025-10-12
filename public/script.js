@@ -331,20 +331,47 @@ function refreshUI() { renderParkingLots(); updateStats(); displayMyParkingStatu
 // アプリケーション起動時の処理
 // =================================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // 起動時に自動ログインは行わない。ログイン画面を常に表示する。
+    // ログイン画面を初期表示
     showLoginScreen();
 
-    // 定期更新はユーザーの操作を妨げる可能性があるので、手動更新を基本とする。
-    // 必要であれば以下のコメントアウトを解除
-    /*
-    setInterval(async () => {
-        if (!mainSystem.classList.contains('hidden')) {
-            console.log("UIを自動更新しました。");
-            try {
-                parkingData = await apiRequest('/api/parking-data');
-                refreshUI();
-            } catch(e) { console.error(e); }
-        }
-    }, 60000); // 1分ごと
-    */
+    // ----- ここからが新しいイベントリスナーの設定 -----
+
+    // ★ フォーム要素を取得
+    const loginForm = document.getElementById('loginMode');
+    const registerForm = document.getElementById('registerMode');
+
+    // ★ リンク要素を取得
+    const switchToRegisterLink = document.getElementById('switchToRegisterLink');
+    const switchToLoginLink = document.getElementById('switchToLoginLink');
+    
+    // ★ ログアウトボタンとモーダルクローズボタンを取得
+    const logoutButton = document.querySelector('.logout-btn');
+    const closeModalButton = document.querySelector('.close');
+
+
+    // ★ イベントリスナーを設定
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+    if (switchToRegisterLink) {
+        switchToRegisterLink.addEventListener('click', (event) => {
+            event.preventDefault(); // リンクの標準動作を止める
+            switchToRegister();
+        });
+    }
+    if (switchToLoginLink) {
+        switchToLoginLink.addEventListener('click', (event) => {
+            event.preventDefault(); // リンクの標準動作を止める
+            switchToLogin();
+        });
+    }
+    if (logoutButton) {
+        logoutButton.addEventListener('click', handleLogout);
+    }
+    if (closeModalButton) {
+        closeModalButton.addEventListener('click', closeDetailModal);
+    }
 });

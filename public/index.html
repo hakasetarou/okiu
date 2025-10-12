@@ -26,9 +26,10 @@
         <label for="loginPassword">パスワード</label>
         <input type="password" id="loginPassword" required>
     </div>
+<form id="loginMode" class="login-form">
     <button type="submit" class="login-btn">ログイン</button>
     <p class="switch-mode">
-        アカウントをお持ちでないですか？ <a onclick="switchToRegister()">新規登録</a>
+        アカウントをお持ちでないですか？ <a id="switchToRegisterLink">新規登録</a>
     </p>
 </form>
 
@@ -50,9 +51,10 @@
                     <input type="password" id="registerPasswordConfirm" required>
                 </div>
                <form id="registerMode" class="login-form hidden" onsubmit="handleRegister(event)">
+<form id="registerMode" class="login-form hidden">
     <button type="submit" class="register-btn">登録する</button>
      <p class="switch-mode">
-        すでにアカウントをお持ちですか？ <a onclick="switchToLogin()">ログイン</a>
+        すでにアカウントをお持ちですか？ <a id="switchToLoginLink">ログイン</a>
     </p>
 </form>
         </div>
@@ -61,7 +63,7 @@
         <div class="container">
             <div class="header">
                 <div id="userInfo" class="user-info"></div>
-                <button class="logout-btn" onclick="handleLogout()">ログアウト</button>
+                <button class="logout-btn">ログアウト</button>
                 <h1> 沖縄国際大学</h1>
                 <div class="subtitle">駐車場管理システム</div>
                 <div class="last-updated" id="lastUpdated">最終更新: --</div>
