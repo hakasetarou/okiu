@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db'); // ★★★ ステップ3で作成したdb.jsを読み込む ★★★
 
+
 // --- データ管理部分を削除 ---
 // let users = []; や let parkingData = ... はもう使いません。
 // データは全てPostgreSQLが管理します。
