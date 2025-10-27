@@ -158,14 +158,14 @@ body {
 .detail-btn:hover { background: var(--secondary-color); }
 .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-content { background-color: white; margin: 5vh auto; padding: 30px; border-radius: 15px; width: 90%; position: relative; animation: slideIn 0.3s; }
+.modal-content { background-color: white; margin: 5vh auto; padding: 30px; border-radius: 15px; width: 90%; position: relative; animation: slideIn 0.3s; display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto;}
 .modal-content.large { max-width: 1000px; }
 @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 .close { color: #aaa; float: right; font-size: 35px; font-weight: bold; cursor: pointer; line-height: 1; }
 .close:hover { color: black; }
 .modal-content h2 { color: var(--primary-color); margin-bottom: 10px; }
 .modal-instruction { color: #555; margin-bottom: 20px; text-align: center; }
-.parking-map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; padding: 15px; background: #f0f0f0; border-radius: 10px; max-height: 60vh; overflow-y: auto; }
+.parking-map-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 8px; padding: 15px; background: #f0f0f0; border-radius: 10px;  }
 .parking-space { padding: 10px 5px; border-radius: 4px; text-align: center; font-size: 0.9em; color: white; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s; font-weight: bold; }
 .parking-space:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
 .space-available { background-color: var(--available-color); }
@@ -195,4 +195,44 @@ body {
     height: auto;
     object-fit: cover;
     display: block;
+}
+/* --- 画像拡大モーダルのスタイル --- */
+.modal-content.image-zoom-content {
+    max-width: 90vw; /* 画面幅の90%に制限 */
+    max-height: 90vh; /* 画面高さの90%に制限 */
+    width: auto;     /* 幅はコンテンツに合わせる */
+    height: auto;    /* 高さはコンテンツに合わせる */
+    padding: 0;      /* パディングはなし */
+    background-color: transparent; /* 背景は透明に */
+    box-shadow: none; /* 影もなし */
+    display: flex;   /* 画像を中央に配置 */
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.zoomed-image {
+    max-width: 100%; /* コンテナ幅に合わせて最大100% */
+    max-height: 100%; /* コンテナ高に合わせて最大100% */
+    object-fit: contain; /* アスペクト比を保ち、全体が見えるように調整 */
+    display: block;
+    margin: auto; /* 中央寄せ */
+}
+
+/* 拡大モーダルの閉じるボタンを画像の上部に配置 */
+.close-zoom-modal {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    color: white; /* 白いバツ印 */
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1001; /* 他の要素より手前に表示 */
+    text-shadow: 0 0 5px rgba(0,0,0,0.5); /* 影で視認性向上 */
+}
+
+/* 通常のモーダルを隠すための調整（任意） */
+.modal {
+    background-color: rgba(0, 0, 0, 0.8); /* 背景を暗くする */
 }

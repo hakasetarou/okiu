@@ -92,9 +92,16 @@
         </div>
     </div>
     <div id="lotDetailModal" class="modal">
+    <div id="imageZoomModal" class="modal">
+        <div class="modal-content image-zoom-content">
+             <span class="close-zoom-modal">&times;</span>
+             <img id="zoomedImage" src="" alt="拡大画像" class="zoomed-image">
+    </div>
+</div>
         <div class="modal-content large">
             <span class="close" onclick="closeDetailModal()">&times;</span>
             <h2 id="lotDetailTitle"></h2>
+
             <div class="lot-image-container">
                 <img id="lotDetailImage" src="" alt="駐車場画像" class="lot-image">
             </div>

@@ -200,14 +200,32 @@ function renderParkingLots() {
 function showLotDetail(lotId) {
     const lot = parkingData.find(l => l.id === lotId);
     if (!lot) return;
-    const mapContainer = document.getElementById('parkingMap');
-    mapContainer.innerHTML = '';
+
+    const modal = document.getElementById('lotDetailModal');
+    const modalTitle = document.getElementById('lotDetailTitle');
+    const parkingMap = document.getElementById('parkingMap');
+    const lotImage = document.getElementById('lotDetailImage'); // ★ 画像要素を取得
+
+    modalTitle.textContent = `${lot.name} の状況`;
+    parkingMap.innerHTML = '';
+
+    // ★★★ 画像URLを設定する処理を追加 ★★★
+    if (lot.imageUrl) {
+        lotImage.src = lot.imageUrl;
+        lotImage.alt = `${lot.name} の画像`;
+        lotImage.parentElement.style.display = 'flex'; // 画像コンテナを表示
+        lotImage.onclick = () => openImageZoomModal(lot.imageUrl);
+    } else {
+        lotImage.parentElement.style.display = 'none'; // 画像URLがなければ非表示
+        lotImage.onclick = null;
+    }
+    // ★★★ 画像処理ここまで ★★★
 
     lot.spaces.forEach(space => {
         const spaceElement = document.createElement('div');
         spaceElement.className = 'parking-space';
         spaceElement.textContent = space.id;
-        
+
         const isMyCar = myParkingInfo && myParkingInfo.lot_id === lotId && myParkingInfo.space_id === space.id;
 
         if (isMyCar) {
@@ -225,10 +243,10 @@ function showLotDetail(lotId) {
                 }
             };
         }
-        mapContainer.appendChild(spaceElement);
+        parkingMap.appendChild(spaceElement);
     });
-    document.getElementById('lotDetailTitle').textContent = `${lot.name} の状況`;
-    document.getElementById('lotDetailModal').style.display = 'block';
+
+    modal.style.display = 'block';
 }
 
 function updateStats() {
@@ -373,5 +391,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (closeModalButton) {
         closeModalButton.addEventListener('click', closeDetailModal);
+    }
+});
+// --- 画像拡大モーダル関連関数 ---
+function openImageZoomModal(imageUrl) {
+    const imageZoomModal = document.getElementById('imageZoomModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+
+    zoomedImage.src = imageUrl;
+    imageZoomModal.style.display = 'block'; // 拡大モーダルを表示
+}
+
+function closeImageZoomModal() {
+    const imageZoomModal = document.getElementById('imageZoomModal');
+    imageZoomModal.style.display = 'none'; // 拡大モーダルを非表示
+    // zoomedImage.src = ''; // メモリ節約のため画像をリセット (任意)
+}
+
+// --- DOMContentLoaded内のイベントリスナーに閉じるボタンを追加 ---
+document.addEventListener('DOMContentLoaded', () => {
+    // ... 既存のイベントリスナー ...
+
+    // ★★★ この行を追加: 拡大モーダルの閉じるボタンのイベントリスナー ★★★
+    const closeZoomModalButton = document.querySelector('.close-zoom-modal');
+    if (closeZoomModalButton) {
+        closeZoomModalButton.addEventListener('click', closeImageZoomModal);
     }
 });
