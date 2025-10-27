@@ -73,40 +73,51 @@ router.post('/login', async (req, res) => {
 // 3. 駐車場データを取得するAPI (各スペースの情報も追加)
 router.get('/parking-data', async (req, res) => {
     try {
-        // 1. まず全ての駐車場情報を取得
-        const lotsResult = await pool.query('SELECT * FROM parking_lots ORDER BY name');
-        const lots = lotsResult.rows;
+        // 1. SQLクエリに image_url を追加
+        const query = `
+            SELECT 
+                p.id, 
+                p.name, 
+                p.capacity,
+                p.image_url,  -- ← 追加
+                (p.capacity - COUNT(s.user_id)) AS available
+            FROM 
+                parking_lots p
+            LEFT JOIN 
+                parking_sessions s ON p.id = s.lot_id
+            GROUP BY 
+                p.id, p.name, p.capacity, p.image_url -- ← 追加
+            ORDER BY
+                p.name;
+        `;
+        const result = await pool.query(query);
 
-        // 2. 次に現在駐車中のセッションを全て取得
+        // 2. 返すデータに imageUrl を追加 (JavaScriptでデータを整形)
+        const lots = result.rows;
         const sessionsResult = await pool.query('SELECT * FROM parking_sessions');
         const sessions = sessionsResult.rows;
 
-        // 3. 駐車場データと駐車中セッションをJavaScriptで結合する
-        const dataWithSpaces = lots.map(lot => {
+        const dataWithSpacesAndImage = lots.map(lot => {
             const parkedSessionsInLot = sessions.filter(s => s.lot_id === lot.id);
-
-            // 各駐車場のスペース情報を生成する (1番からcapacity番まで)
             const spaces = [];
             for (let i = 1; i <= lot.capacity; i++) {
                 const parkedSession = parkedSessionsInLot.find(s => s.space_id === i);
                 spaces.push({
                     id: i,
-                    isParked: !!parkedSession, // 駐車されていればtrue, そうでなければfalse
+                    isParked: !!parkedSession,
                     userId: parkedSession ? parkedSession.user_id : null
                 });
             }
-
-            // フロントエンドに返す最終的なデータ構造
             return {
                 id: lot.id,
                 name: lot.name,
                 capacity: lot.capacity,
                 available: lot.capacity - parkedSessionsInLot.length,
-                spaces: spaces // ★★★ この詳細なスペース情報が追加された！ ★★★
+                imageUrl: lot.image_url, // ★ 画像URLを追加
+                spaces: spaces
             };
         });
-
-        res.json(dataWithSpaces);
+        res.json(dataWithSpacesAndImage); // ★ 修正後のデータを返す
 
     } catch (error) {
         console.error('Failed to get parking data:', error);
