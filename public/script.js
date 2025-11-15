@@ -51,6 +51,8 @@ function switchAuthMode(mode) {
     hideError();
 }
 
+// ※switchToLogin と switchToRegister は HTMLの onclick からは使わなくなったため削除可能ですが、
+// 　handleRegister内などで使っているので残しておきます。
 const switchToLogin = () => switchAuthMode('login');
 const switchToRegister = () => switchAuthMode('register');
 
@@ -71,31 +73,23 @@ async function handleRegister(event) {
     const password = document.getElementById('registerPassword').value;
     const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
 
-    // ----- ↓↓↓ ここから新しいバリデーションルールを追加 ↓↓↓ -----
-
-    // 学籍番号のルール: 数字2桁 + 英字2文字 + 数字3桁
+    // ----- バリデーションルール -----
     const studentIdRegex = /^\d{2}[a-z]{2}\d{3}$/i;
     if (!studentIdRegex.test(studentId)) {
         return showError('学籍番号は「数字2桁 + 英字2文字 + 数字3桁」の形式で入力してください。(例: 23db123)');
     }
-
-    // パスワードのルール: 8文字以上で、英字と数字の両方を含む
     const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     if (!passwordRegex.test(password)) {
         return showError('パスワードは8文字以上の英数字の両方を含めてください。');
     }
-
-    // ----- ↑↑↑ バリデーションルールはここまで ↑↑↑ -----
-
     if (password !== passwordConfirm) {
         return showError('パスワードが一致しません。');
     }
-
-    if (!name) { // 氏名のチェックも追加しておくと親切です
+    if (!name) {
         return showError('氏名を入力してください。');
     }
 
-    // APIリクエスト部分は変更なし
+    // APIリクエスト
     try {
         await apiRequest('/api/register', {
             method: 'POST',
@@ -105,7 +99,7 @@ async function handleRegister(event) {
         showNotification('新規登録が完了しました。ログインしてください。', 'success');
         switchToLogin();
     } catch (error) {
-        // apiRequest関数内でshowErrorが呼ばれるので、ここでは何もしない
+        // apiRequest関数内でshowErrorが呼ばれる
     }
 }
 
@@ -125,7 +119,9 @@ async function handleLogin(event) {
         currentUser = data.user;
         myParkingInfo = data.myParkingInfo;
         showMainSystem();
-    } catch (error) {}
+    } catch (error) {
+        // apiRequest関数内でshowErrorが呼ばれる
+    }
 }
 
 function handleLogout() {
@@ -153,7 +149,6 @@ function showMainSystem() {
 
 async function initializeSystem() {
     if (!currentUser) return;
-
     document.getElementById('userInfo').textContent = `ようこそ、${currentUser.name} さん`;
     
     try {
@@ -166,7 +161,7 @@ async function initializeSystem() {
 
 
 // =================================================================================
-// 駐車場関連の処理
+// 駐車場関連の処理 (変更なし)
 // =================================================================================
 function renderParkingLots() {
     const container = document.getElementById('parkingLots');
@@ -178,7 +173,7 @@ function renderParkingLots() {
         const statusText = getStatusText(availableCount, lot.capacity);
         const lotElement = document.createElement('div');
         lotElement.className = 'parking-lot';
-        lotElement.onclick = () => showLotDetail(lot.id);
+        lotElement.onclick = () => showLotDetail(lot.id); // HTMLのonclick属性の代わりにここで設定
         lotElement.innerHTML = `
             <div class="lot-header ${statusClass}">
                 <span>${lot.name}</span>
@@ -204,22 +199,20 @@ function showLotDetail(lotId) {
     const modal = document.getElementById('lotDetailModal');
     const modalTitle = document.getElementById('lotDetailTitle');
     const parkingMap = document.getElementById('parkingMap');
-    const lotImage = document.getElementById('lotDetailImage'); // ★ 画像要素を取得
+    const lotImage = document.getElementById('lotDetailImage');
 
     modalTitle.textContent = `${lot.name} の状況`;
     parkingMap.innerHTML = '';
 
-    // ★★★ 画像URLを設定する処理を追加 ★★★
     if (lot.imageUrl) {
         lotImage.src = lot.imageUrl;
         lotImage.alt = `${lot.name} の画像`;
-        lotImage.parentElement.style.display = 'flex'; // 画像コンテナを表示
+        lotImage.parentElement.style.display = 'flex';
         lotImage.onclick = () => openImageZoomModal(lot.imageUrl);
     } else {
-        lotImage.parentElement.style.display = 'none'; // 画像URLがなければ非表示
+        lotImage.parentElement.style.display = 'none';
         lotImage.onclick = null;
     }
-    // ★★★ 画像処理ここまで ★★★
 
     lot.spaces.forEach(space => {
         const spaceElement = document.createElement('div');
@@ -228,27 +221,21 @@ function showLotDetail(lotId) {
         const isMyCar = myParkingInfo && myParkingInfo.lot_id === lotId && myParkingInfo.space_id === space.id;
 
         if (isMyCar) {
-            // --- 自分の車 ---
             spaceElement.classList.add('space-my-car');
-            const endTime = myParkingInfo.estimated_end_time; // 自分の時刻情報を取得
-            // innerHTMLを使って2行表示に変更
+            const endTime = myParkingInfo.estimated_end_time;
             spaceElement.innerHTML = `<span>${space.id}</span><span class="space-time">${endTime ? endTime : 'My Car'}</span>`;
             spaceElement.onclick = () => processSpaceCheckout();
 
         } else if (space.isParked) {
-            // --- 他人の車 ---
             spaceElement.classList.add('space-occupied');
-            const endTime = space.endTime; // バックエンドから受け取った時刻
+            const endTime = space.endTime;
             if (endTime) {
-                // 時刻があれば、innerHTMLで2行表示に変更
                 spaceElement.innerHTML = `<span>${space.id}</span><span class="space-time">${endTime}</span>`;
             } else {
-                // 時刻がなければ(例: "未定"でもない場合)、番号だけ表示
                 spaceElement.textContent = space.id;
             }
 
         } else {
-            // --- 空きスペース --- (変更なし)
             spaceElement.classList.add('space-available');
             spaceElement.textContent = space.id;
             spaceElement.onclick = () => {
@@ -263,7 +250,9 @@ function showLotDetail(lotId) {
     });
 
     modal.style.display = 'block';
-}function updateStats() {
+}
+
+function updateStats() {
     const totals = parkingData.reduce((acc, lot) => {
         acc.capacity += lot.capacity;
         acc.available += lot.available;
@@ -283,19 +272,29 @@ function displayMyParkingStatus() {
         const parkedLot = parkingData.find(l => l.id === myParkingInfo.lot_id);
         if (parkedLot) {
             const elapsedTime = getElapsedTime(myParkingInfo.start_time);
-// 1. データベースから来た時刻情報(estimated_end_time)をチェック
-        const endTimeDisplay = myParkingInfo.estimated_end_time 
-            ? `<p><strong>退庫予定:</strong> ${myParkingInfo.estimated_end_time}</p>` 
-            : ''; // 時刻がなければ(または"未定"でも)そのまま表示、nullなら何も表示しない
+            
+            // ★★★ HTMLの壊れを修正 ★★★
+            const endTimeDisplay = myParkingInfo.estimated_end_time 
+                ? `<p><strong>退庫予定:</strong> ${myParkingInfo.estimated_end_time}</p>` 
+                : '';
 
-        statusDiv.innerHTML = `
-            <div class="my-status-card">
-                <h4>現在の駐車状況</h4>
-                <p><strong>場所:</strong> ${parkedLot.name} (${myParkingInfo.space_id})</p>
-                
-                ${endTimeDisplay} <p><strong>経過時間:</strong> ${elapsedTime}</p> <button class="checkout-btn" onclick="processSpaceCheckout()">ここから出庫</button>
-            </div>
-        `;
+            statusDiv.innerHTML = `
+                <div class="my-status-card">
+                    <h4>現在の駐車状況</h4>
+                    <p><strong>場所:</strong> ${parkedLot.name} (${myParkingInfo.space_id})</p>
+                    ${endTimeDisplay}
+                    <p><strong>経過時間:</strong> ${elapsedTime}</p> 
+                    <button class="checkout-btn" id="mainCheckoutButton">ここから出庫</button>
+                </div>
+            `;
+            // ★★★ 修正ここまで ★★★
+
+            // 動的に生成したボタンにイベントリスナーを追加
+            const checkoutBtn = document.getElementById('mainCheckoutButton');
+            if (checkoutBtn) {
+                checkoutBtn.addEventListener('click', processSpaceCheckout);
+            }
+
             statusDiv.classList.remove('hidden');
         }
     } else {
@@ -309,8 +308,6 @@ async function processSpaceCheckin(lotId, spaceId, endTimeToSend) {
         return showNotification('既に駐車済みです。出庫してから再度お試しください。', 'error');
     }
 
-    // ★ promptのロジックはここから削除されました ★
-
     try {
         const newParkingInfo = await apiRequest('/api/parking/checkin', {
             method: 'POST',
@@ -319,21 +316,20 @@ async function processSpaceCheckin(lotId, spaceId, endTimeToSend) {
                 userId: currentUser.studentId,
                 lotId: lotId,
                 spaceId: spaceId,
-                endTime: endTimeToSend // ★ 引数で受け取った時刻/未定を送信
+                endTime: endTimeToSend
             })
         });
 
         myParkingInfo = newParkingInfo;
         showNotification(`${lotId}の${spaceId}に駐車登録しました。`, 'success');
 
-        // データを再取得してUIを更新
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
-        closeDetailModal(); // 詳細モーダルも閉じる
-        closeEndTimeModal(); // ★ 新しい時刻モーダルも閉じる
+        closeDetailModal();
+        closeEndTimeModal();
 
     } catch (error) {
-        // apiRequest関数でエラーが表示されるので、ここでは何もしない
+        // apiRequest関数でエラーが表示される
     }
 }
 
@@ -352,12 +348,14 @@ async function processSpaceCheckout() {
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
         closeDetailModal();
-    } catch (error) {}
+    } catch (error) {
+        // apiRequest関数でエラーが表示される
+    }
 }
 
 
 // =================================================================================
-// ヘルパー関数
+// ヘルパー関数 (変更なし)
 // =================================================================================
 function getStatusClass(available, capacity) { if (available === 0) return 'full'; const rate = available / capacity; if (rate > 0.3) return 'available'; return 'limited'; }
 function getStatusText(available, capacity) { if (available === 0) return '満車'; const rate = available / capacity; if (rate > 0.3) return '空きあり'; return '残りわずか'; }
@@ -384,16 +382,13 @@ function refreshUI() { renderParkingLots(); updateStats(); displayMyParkingStatu
 
 
 // =================================================================================
-// 退庫予定時刻モーダル関連の関数
+// 退庫予定時刻モーダル関連の関数 (変更なし)
 // =================================================================================
-
-// 時刻モーダルを開く
 function openEndTimeModal(lotId, spaceId) {
     const modal = document.getElementById('endTimeModal');
     const title = document.getElementById('endTimeModalTitle');
     const timeInput = document.getElementById('endTimeInput');
 
-    // 現在時刻をデフォルト値として設定
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -401,7 +396,6 @@ function openEndTimeModal(lotId, spaceId) {
 
     title.textContent = `${lotId} の ${spaceId}番 に駐車`;
 
-    // ★ OKボタンに、クリックされた場所の情報を一時的に保存
     const submitBtn = document.getElementById('endTimeSubmitBtn');
     submitBtn.dataset.lotId = lotId;
     submitBtn.dataset.spaceId = spaceId;
@@ -409,13 +403,11 @@ function openEndTimeModal(lotId, spaceId) {
     modal.style.display = 'block';
 }
 
-// 時刻モーダルを閉じる
 function closeEndTimeModal() {
     const modal = document.getElementById('endTimeModal');
     modal.style.display = 'none';
 }
 
-// 時刻モーダルの「OK」または「未定」が押されたときの処理
 function handleEndTimeSubmit(isUncertain = false) {
     const submitBtn = document.getElementById('endTimeSubmitBtn');
     const lotId = submitBtn.dataset.lotId;
@@ -433,108 +425,87 @@ function handleEndTimeSubmit(isUncertain = false) {
         endTimeToSend = timeInput.value;
     }
 
-    // サーバーに送信する処理を呼び出す
     processSpaceCheckin(lotId, spaceId, endTimeToSend);
 }
 
 // =================================================================================
-// アプリケーション起動時の処理
+// 画像拡大モーダル関連の関数 (変更なし)
 // =================================================================================
-document.addEventListener('DOMContentLoaded', () => {
-    // ログイン画面を初期表示
-    showLoginScreen();
-
-    // ----- ここからが新しいイベントリスナーの設定 -----
-
-    // ★ フォーム要素を取得
-    const loginForm = document.getElementById('loginMode');
-    const registerForm = document.getElementById('registerMode');
-
-    // ★ リンク要素を取得
-    const switchToRegisterLink = document.getElementById('switchToRegisterLink');
-    const switchToLoginLink = document.getElementById('switchToLoginLink');
-    
-    // ★ ログアウトボタンとモーダルクローズボタンを取得
-    const logoutButton = document.querySelector('.logout-btn');
-    const closeModalButton = document.querySelector('.close');
-
-    const closeEndTimeModalBtn = document.getElementById('closeEndTimeModal');
-    const endTimeSubmitBtn = document.getElementById('endTimeSubmitBtn');
-    const endTimeUncertainBtn = document.getElementById('endTimeUncertainBtn');
-
-
-    // ★ イベントリスナーを設定
-    if (loginForm) {
-        loginForm.addEventListener('submit', handleLogin);
-    }
-    if (registerForm) {
-        registerForm.addEventListener('submit', handleRegister);
-    }
-    if (switchToRegisterLink) {
-        switchToRegisterLink.addEventListener('click', (event) => {
-            event.preventDefault(); // リンクの標準動作を止める
-            switchToRegister();
-        });
-    }
-    if (switchToLoginLink) {
-        switchToLoginLink.addEventListener('click', (event) => {
-            event.preventDefault(); // リンクの標準動作を止める
-            switchToLogin();
-        });
-    }
-    if (logoutButton) {
-        logoutButton.addEventListener('click', handleLogout);
-    }
-    if (closeModalButton) {
-        closeModalButton.addEventListener('click', closeDetailModal);
-    }
-    if (closeEndTimeModalBtn) {
-        closeEndTimeModalBtn.addEventListener('click', closeEndTimeModal);
-    }
-    if (endTimeSubmitBtn) {
-        endTimeSubmitBtn.addEventListener('click', () => handleEndTimeSubmit(false)); // OKボタン
-    }
-    if (endTimeUncertainBtn) {
-        endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true)); // 未定ボタン
-    }
-});
-// --- 画像拡大モーダル関連関数 ---
 function openImageZoomModal(imageUrl) {
     const imageZoomModal = document.getElementById('imageZoomModal');
     const zoomedImage = document.getElementById('zoomedImage');
 
     zoomedImage.src = imageUrl;
-    imageZoomModal.style.display = 'block'; // 拡大モーダルを表示
+    imageZoomModal.style.display = 'block';
 }
 
 function closeImageZoomModal() {
     const imageZoomModal = document.getElementById('imageZoomModal');
-    imageZoomModal.style.display = 'none'; // 拡大モーダルを非表示
-    // zoomedImage.src = ''; // メモリ節約のため画像をリセット (任意)
+    imageZoomModal.style.display = 'none';
 }
 
-// --- DOMContentLoaded内のイベントリスナーに閉じるボタンを追加 ---
+// =================================================================================
+// ★★★★★ アプリケーション起動時の処理 (修正・統合版) ★★★★★
+// =================================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // ... 既存のイベントリスナー ...
+    // ログイン画面を初期表示
+    showLoginScreen();
 
-    // ★★★ この行を追加: 拡大モーダルの閉じるボタンのイベントリスナー ★★★
+    // ----- フォームの「送信(submit)」イベント（エンターキー対応） -----
+    const loginForm = document.getElementById('loginMode');
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
+    const registerForm = document.getElementById('registerMode');
+    if (registerForm) {
+        registerForm.addEventListener('submit', handleRegister);
+    }
+
+    // ----- ログイン/登録切り替えリンク -----
+    const switchToRegisterLink = document.getElementById('switchToRegisterLink');
+    if (switchToRegisterLink) {
+        switchToRegisterLink.addEventListener('click', (event) => {
+            event.preventDefault(); // リンクのデフォルト動作を防ぐ
+            switchToRegister();
+        });
+    }
+    const switchToLoginLink = document.getElementById('switchToLoginLink');
+    if (switchToLoginLink) {
+        switchToLoginLink.addEventListener('click', (event) => {
+            event.preventDefault(); // リンクのデフォルト動作を防ぐ
+            switchToLogin();
+        });
+    }
+
+    // ----- メインシステムのボタン -----
+    const logoutButton = document.querySelector('.logout-btn');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', handleLogout);
+    }
+
+    // ----- 詳細モーダルの閉じるボタン -----
+    const closeDetailModalButton = document.querySelector('#lotDetailModal .close');
+    if (closeDetailModalButton) {
+        closeDetailModalButton.addEventListener('click', closeDetailModal);
+    }
+    
+    // ----- 画像拡大モーダルの閉じるボタン -----
     const closeZoomModalButton = document.querySelector('.close-zoom-modal');
     if (closeZoomModalButton) {
         closeZoomModalButton.addEventListener('click', closeImageZoomModal);
     }
 
+    // ----- 時刻入力モーダルのボタン -----
     const closeEndTimeModalBtn = document.getElementById('closeEndTimeModal');
     if (closeEndTimeModalBtn) {
         closeEndTimeModalBtn.addEventListener('click', closeEndTimeModal);
     }
-
     const endTimeSubmitBtn = document.getElementById('endTimeSubmitBtn');
     if (endTimeSubmitBtn) {
-        endTimeSubmitBtn.addEventListener('click', () => handleEndTimeSubmit(false));
+        endTimeSubmitBtn.addEventListener('click', () => handleEndTimeSubmit(false)); // OKボタン
     }
-
     const endTimeUncertainBtn = document.getElementById('endTimeUncertainBtn');
     if (endTimeUncertainBtn) {
-        endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true));
+        endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true)); // 未定ボタン
     }
 });
