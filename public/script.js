@@ -384,28 +384,41 @@ function refreshUI() { renderParkingLots(); updateStats(); displayMyParkingStatu
 // =================================================================================
 // 退庫予定時刻モーダル関連の関数
 // =================================================================================
+
+// 時刻モーダルを開く
 function openEndTimeModal(lotId, spaceId) {
     const modal = document.getElementById('endTimeModal');
     const title = document.getElementById('endTimeModalTitle');
     const timeInput = document.getElementById('endTimeInput');
+
+    // 現在時刻をデフォルト値として設定
     const now = new Date();
     const hours = now.getHours().toString().padStart(2, '0');
     const minutes = now.getMinutes().toString().padStart(2, '0');
     timeInput.value = `${hours}:${minutes}`;
+
     title.textContent = `${lotId} の ${spaceId}番 に駐車`;
+
+    // ★ OKボタンに、クリックされた場所の情報を一時的に保存
     const submitBtn = document.getElementById('endTimeSubmitBtn');
     submitBtn.dataset.lotId = lotId;
     submitBtn.dataset.spaceId = spaceId;
+
     modal.style.display = 'block';
 }
+
+// 時刻モーダルを閉じる
 function closeEndTimeModal() {
     const modal = document.getElementById('endTimeModal');
     modal.style.display = 'none';
 }
+
+// 時刻モーダルの「OK」または「未定」が押されたときの処理
 function handleEndTimeSubmit(isUncertain = false) {
     const submitBtn = document.getElementById('endTimeSubmitBtn');
     const lotId = submitBtn.dataset.lotId;
     const spaceId = submitBtn.dataset.spaceId;
+
     let endTimeToSend;
     if (isUncertain) {
         endTimeToSend = "未定";
@@ -417,6 +430,8 @@ function handleEndTimeSubmit(isUncertain = false) {
         }
         endTimeToSend = timeInput.value;
     }
+
+    // サーバーに送信する処理を呼び出す
     processSpaceCheckin(lotId, spaceId, endTimeToSend);
 }
 
@@ -426,16 +441,18 @@ function handleEndTimeSubmit(isUncertain = false) {
 function openImageZoomModal(imageUrl) {
     const imageZoomModal = document.getElementById('imageZoomModal');
     const zoomedImage = document.getElementById('zoomedImage');
+
     zoomedImage.src = imageUrl;
-    imageZoomModal.style.display = 'block';
+    imageZoomModal.style.display = 'block'; // 拡大モーダルを表示
 }
+
 function closeImageZoomModal() {
     const imageZoomModal = document.getElementById('imageZoomModal');
-    imageZoomModal.style.display = 'none';
+    imageZoomModal.style.display = 'none'; // 拡大モーダルを非表示
 }
 
 // =================================================================================
-// ★★★★★ アプリケーション起動時の処理 (最終・統合版) ★★★★★
+// ★★★★★ アプリケーション起動時の処理 (最終・完成版) ★★★★★
 // =================================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // ログイン画面を初期表示
@@ -451,30 +468,30 @@ document.addEventListener('DOMContentLoaded', () => {
         registerForm.addEventListener('submit', handleRegister);
     }
 
-    // ----- 2. ログイン/登録切り替えリンク -----
+    // ★★★★★ 2. ログイン/登録切り替えリンク (ここが修正・追加箇所) ★★★★★
     const switchToRegisterLink = document.getElementById('switchToRegisterLink');
     if (switchToRegisterLink) {
         switchToRegisterLink.addEventListener('click', (event) => {
-            event.preventDefault(); // リンクのデフォルト動作を防ぐ
+            event.preventDefault(); // リンクの標準動作を防ぐ
             switchToRegister();
         });
     }
     const switchToLoginLink = document.getElementById('switchToLoginLink');
     if (switchToLoginLink) {
         switchToLoginLink.addEventListener('click', (event) => {
-            event.preventDefault(); // リンクのデフォルト動作を防ぐ
+            event.preventDefault(); // リンクの標準動作を防ぐ
             switchToLogin();
         });
     }
 
     // ----- 3. メインシステムのボタン -----
-    const logoutButton = document.getElementById('logoutButton');
+    const logoutButton = document.querySelector('.logout-btn');
     if (logoutButton) {
         logoutButton.addEventListener('click', handleLogout);
     }
 
     // ----- 4. 詳細モーダルの閉じるボタン -----
-    const closeDetailModalButton = document.getElementById('closeDetailModalButton');
+    const closeDetailModalButton = document.querySelector('#lotDetailModal .close');
     if (closeDetailModalButton) {
         closeDetailModalButton.addEventListener('click', closeDetailModal);
     }

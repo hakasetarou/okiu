@@ -129,7 +129,7 @@ router.get('/parking-data', async (req, res) => {
 // 4. 駐車（チェックイン）処理を行うAPI
 router.post('/parking/checkin', async (req, res) => {
     // フロントエンドから送られてきた情報を取得
-    const { userId, lotId, spaceId } = req.body;
+    const { userId, lotId, spaceId, endTime } = req.body;
 
     try {
         // 1. まず、その人が既に駐車していないか確認
