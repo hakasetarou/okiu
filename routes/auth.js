@@ -105,7 +105,8 @@ router.get('/parking-data', async (req, res) => {
                 spaces.push({
                     id: i,
                     isParked: !!parkedSession,
-                    userId: parkedSession ? parkedSession.user_id : null
+                    userId: parkedSession ? parkedSession.user_id : null,
+                    endTime: parkedSession ? parkedSession.estimated_end_time : null
                 });
             }
             return {
@@ -140,12 +141,13 @@ router.post('/parking/checkin', async (req, res) => {
 
         // 2. 駐車記録をデータベースにINSERTする
         const insertQuery = `
-            INSERT INTO parking_sessions (user_id, lot_id, space_id) 
-            VALUES ($1, $2, $3) RETURNING *
+            INSERT INTO parking_sessions (user_id, lot_id, space_id, estimated_end_time) 
+            VALUES ($1, $2, $3, $4) RETURNING *
         `;
-        const result = await pool.query(insertQuery, [userId, lotId, spaceId]);
+        const result = await pool.query(insertQuery, [userId, lotId, spaceId, endTime]);
 
-        console.log('User checked in:', result.rows[0]);
+        console.log('User checked in:',result.rows[0]);
+        res.status(201).json(result.rows[0]);
         // 成功したら、新しい駐車情報をフロントエンドに返す
         res.status(201).json(result.rows[0]);
 

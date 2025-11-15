@@ -98,6 +98,23 @@
              <img id="zoomedImage" src="" alt="拡大画像" class="zoomed-image">
     </div>
 </div>
+<div id="endTimeModal" class="modal">
+    <div class="modal-content">
+        <span id="closeEndTimeModal" class="close">&times;</span>
+        <h2 id="endTimeModalTitle">退庫予定時刻の入力</h2>
+        <p class="modal-instruction">退庫する予定時刻を選択してください。</p>
+
+        <div class="form-group">
+            <label for="endTimeInput">予定時刻:</label>
+            <input type="time" id="endTimeInput" class="time-input">
+        </div>
+
+        <div class="modal-actions">
+            <button id="endTimeUncertainBtn" class="modal-btn-secondary">予定は未定</button>
+            <button id="endTimeSubmitBtn" class="modal-btn-primary">OK</button>
+        </div>
+    </div>
+</div>
         <div class="modal-content large">
             <span class="close" onclick="closeDetailModal()">&times;</span>
             <h2 id="lotDetailTitle"></h2>

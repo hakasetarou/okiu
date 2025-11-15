@@ -224,22 +224,38 @@ function showLotDetail(lotId) {
     lot.spaces.forEach(space => {
         const spaceElement = document.createElement('div');
         spaceElement.className = 'parking-space';
-        spaceElement.textContent = space.id;
-
+        
         const isMyCar = myParkingInfo && myParkingInfo.lot_id === lotId && myParkingInfo.space_id === space.id;
 
         if (isMyCar) {
+            // --- 自分の車 ---
             spaceElement.classList.add('space-my-car');
+            const endTime = myParkingInfo.estimated_end_time; // 自分の時刻情報を取得
+            // innerHTMLを使って2行表示に変更
+            spaceElement.innerHTML = `<span>${space.id}</span><span class="space-time">${endTime ? endTime : 'My Car'}</span>`;
             spaceElement.onclick = () => processSpaceCheckout();
+
         } else if (space.isParked) {
+            // --- 他人の車 ---
             spaceElement.classList.add('space-occupied');
+            const endTime = space.endTime; // バックエンドから受け取った時刻
+            if (endTime) {
+                // 時刻があれば、innerHTMLで2行表示に変更
+                spaceElement.innerHTML = `<span>${space.id}</span><span class="space-time">${endTime}</span>`;
+            } else {
+                // 時刻がなければ(例: "未定"でもない場合)、番号だけ表示
+                spaceElement.textContent = space.id;
+            }
+
         } else {
+            // --- 空きスペース --- (変更なし)
             spaceElement.classList.add('space-available');
+            spaceElement.textContent = space.id;
             spaceElement.onclick = () => {
                 if (myParkingInfo) {
                     showNotification('既に駐車済みです。出庫してから再度お試しください。', 'error');
                 } else {
-                    processSpaceCheckin(lot.id, space.id);
+                    openEndTimeModal(lot.id, space.id);
                 }
             };
         }
@@ -247,9 +263,7 @@ function showLotDetail(lotId) {
     });
 
     modal.style.display = 'block';
-}
-
-function updateStats() {
+}function updateStats() {
     const totals = parkingData.reduce((acc, lot) => {
         acc.capacity += lot.capacity;
         acc.available += lot.available;
@@ -269,11 +283,19 @@ function displayMyParkingStatus() {
         const parkedLot = parkingData.find(l => l.id === myParkingInfo.lot_id);
         if (parkedLot) {
             const elapsedTime = getElapsedTime(myParkingInfo.start_time);
-            statusDiv.innerHTML = `
-                <span class="status-title">あなたの駐車場所</span>
-                <span>現在 <strong style="color: #f1c40f;">${parkedLot.name} (${myParkingInfo.space_id})</strong> に駐車中です。（経過時間: ${elapsedTime}）</span>
-                <button class="checkout-btn" onclick="processSpaceCheckout()">ここから出庫</button>
-            `;
+// 1. データベースから来た時刻情報(estimated_end_time)をチェック
+        const endTimeDisplay = myParkingInfo.estimated_end_time 
+            ? `<p><strong>退庫予定:</strong> ${myParkingInfo.estimated_end_time}</p>` 
+            : ''; // 時刻がなければ(または"未定"でも)そのまま表示、nullなら何も表示しない
+
+        statusDiv.innerHTML = `
+            <div class="my-status-card">
+                <h4>現在の駐車状況</h4>
+                <p><strong>場所:</strong> ${parkedLot.name} (${myParkingInfo.space_id})</p>
+                
+                ${endTimeDisplay} <p><strong>経過時間:</strong> ${elapsedTime}</p> <button class="checkout-btn" onclick="processSpaceCheckout()">ここから出庫</button>
+            </div>
+        `;
             statusDiv.classList.remove('hidden');
         }
     } else {
@@ -281,22 +303,38 @@ function displayMyParkingStatus() {
     }
 }
 
-async function processSpaceCheckin(lotId, spaceId) {
-    if (!confirm(`${lotId} の ${spaceId}番 に駐車しますか？`)) return;
+async function processSpaceCheckin(lotId, spaceId, endTimeToSend) {
+    if (!currentUser) return showNotification('ログイン情報が見つかりません。', 'error');
+    if (myParkingInfo) {
+        return showNotification('既に駐車済みです。出庫してから再度お試しください。', 'error');
+    }
+
+    // ★ promptのロジックはここから削除されました ★
 
     try {
         const newParkingInfo = await apiRequest('/api/parking/checkin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: currentUser.studentId, lotId, spaceId })
+            body: JSON.stringify({
+                userId: currentUser.studentId,
+                lotId: lotId,
+                spaceId: spaceId,
+                endTime: endTimeToSend // ★ 引数で受け取った時刻/未定を送信
+            })
         });
+
         myParkingInfo = newParkingInfo;
         showNotification(`${lotId}の${spaceId}に駐車登録しました。`, 'success');
-        
+
+        // データを再取得してUIを更新
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
-        closeDetailModal();
-    } catch (error) {}
+        closeDetailModal(); // 詳細モーダルも閉じる
+        closeEndTimeModal(); // ★ 新しい時刻モーダルも閉じる
+
+    } catch (error) {
+        // apiRequest関数でエラーが表示されるので、ここでは何もしない
+    }
 }
 
 async function processSpaceCheckout() {
@@ -346,6 +384,60 @@ function refreshUI() { renderParkingLots(); updateStats(); displayMyParkingStatu
 
 
 // =================================================================================
+// 退庫予定時刻モーダル関連の関数
+// =================================================================================
+
+// 時刻モーダルを開く
+function openEndTimeModal(lotId, spaceId) {
+    const modal = document.getElementById('endTimeModal');
+    const title = document.getElementById('endTimeModalTitle');
+    const timeInput = document.getElementById('endTimeInput');
+
+    // 現在時刻をデフォルト値として設定
+    const now = new Date();
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    timeInput.value = `${hours}:${minutes}`;
+
+    title.textContent = `${lotId} の ${spaceId}番 に駐車`;
+
+    // ★ OKボタンに、クリックされた場所の情報を一時的に保存
+    const submitBtn = document.getElementById('endTimeSubmitBtn');
+    submitBtn.dataset.lotId = lotId;
+    submitBtn.dataset.spaceId = spaceId;
+
+    modal.style.display = 'block';
+}
+
+// 時刻モーダルを閉じる
+function closeEndTimeModal() {
+    const modal = document.getElementById('endTimeModal');
+    modal.style.display = 'none';
+}
+
+// 時刻モーダルの「OK」または「未定」が押されたときの処理
+function handleEndTimeSubmit(isUncertain = false) {
+    const submitBtn = document.getElementById('endTimeSubmitBtn');
+    const lotId = submitBtn.dataset.lotId;
+    const spaceId = submitBtn.dataset.spaceId;
+
+    let endTimeToSend;
+    if (isUncertain) {
+        endTimeToSend = "未定";
+    } else {
+        const timeInput = document.getElementById('endTimeInput');
+        if (timeInput.value === "") {
+            showNotification('時刻が入力されていません。「予定は未定」を押してください。', 'error');
+            return;
+        }
+        endTimeToSend = timeInput.value;
+    }
+
+    // サーバーに送信する処理を呼び出す
+    processSpaceCheckin(lotId, spaceId, endTimeToSend);
+}
+
+// =================================================================================
 // アプリケーション起動時の処理
 // =================================================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -365,6 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ★ ログアウトボタンとモーダルクローズボタンを取得
     const logoutButton = document.querySelector('.logout-btn');
     const closeModalButton = document.querySelector('.close');
+
+    const closeEndTimeModalBtn = document.getElementById('closeEndTimeModal');
+    const endTimeSubmitBtn = document.getElementById('endTimeSubmitBtn');
+    const endTimeUncertainBtn = document.getElementById('endTimeUncertainBtn');
 
 
     // ★ イベントリスナーを設定
@@ -392,6 +488,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeModalButton) {
         closeModalButton.addEventListener('click', closeDetailModal);
     }
+    if (closeEndTimeModalBtn) {
+        closeEndTimeModalBtn.addEventListener('click', closeEndTimeModal);
+    }
+    if (endTimeSubmitBtn) {
+        endTimeSubmitBtn.addEventListener('click', () => handleEndTimeSubmit(false)); // OKボタン
+    }
+    if (endTimeUncertainBtn) {
+        endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true)); // 未定ボタン
+    }
 });
 // --- 画像拡大モーダル関連関数 ---
 function openImageZoomModal(imageUrl) {
@@ -416,5 +521,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeZoomModalButton = document.querySelector('.close-zoom-modal');
     if (closeZoomModalButton) {
         closeZoomModalButton.addEventListener('click', closeImageZoomModal);
+    }
+
+    const closeEndTimeModalBtn = document.getElementById('closeEndTimeModal');
+    if (closeEndTimeModalBtn) {
+        closeEndTimeModalBtn.addEventListener('click', closeEndTimeModal);
+    }
+
+    const endTimeSubmitBtn = document.getElementById('endTimeSubmitBtn');
+    if (endTimeSubmitBtn) {
+        endTimeSubmitBtn.addEventListener('click', () => handleEndTimeSubmit(false));
+    }
+
+    const endTimeUncertainBtn = document.getElementById('endTimeUncertainBtn');
+    if (endTimeUncertainBtn) {
+        endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true));
     }
 });
