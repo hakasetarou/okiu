@@ -29,7 +29,8 @@
 <form id="loginMode" class="login-form">
     <button type="submit" class="login-btn">ログイン</button>
     <p class="switch-mode">
-        アカウントをお持ちでないですか？ <a id="switchToRegisterLink">新規登録</a>
+        アカウントをお持ちでないですか？ 
+        <a href="#" id="switchToRegisterLink">新規登録</a>
     </p>
 </form>
 
@@ -54,7 +55,8 @@
 <form id="registerMode" class="login-form hidden">
     <button type="submit" class="register-btn">登録する</button>
      <p class="switch-mode">
-        すでにアカウントをお持ちですか？ <a id="switchToLoginLink">ログイン</a>
+        すでにアカウントをお持ちですか？ 
+        <a href="#" id="switchToLoginLink">ログイン</a>
     </p>
 </form>
         </div>
@@ -63,7 +65,8 @@
         <div class="container">
             <div class="header">
                 <div id="userInfo" class="user-info"></div>
-                <button class="logout-btn">ログアウト</button>
+                <button id="logoutButton" class="logout-btn">ログアウト</button>
+                <span id="closeDetailModalButton" class="close">&times;</span>
                 <h1> 沖縄国際大学</h1>
                 <div class="subtitle">駐車場管理システム</div>
                 <div class="last-updated" id="lastUpdated">最終更新: --</div>
