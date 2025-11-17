@@ -139,12 +139,19 @@ function handleLogout() {
 function showLoginScreen() {
     loginScreen.classList.remove('hidden');
     mainSystem.classList.add('hidden');
+    closeDetailModal();     // 詳細モーダルを閉じる
+    closeEndTimeModal();    // 時刻入力モーダルを閉じる
+    closeImageZoomModal();  // 画像拡大モーダルを閉じる
 }
 
 function showMainSystem() {
     loginScreen.classList.add('hidden');
     mainSystem.classList.remove('hidden');
+    closeDetailModal();     // 詳細モーダルを閉じる
+    closeEndTimeModal();    // 時刻入力モーダルを閉じる
+    closeImageZoomModal();  // 画像拡大モーダルを閉じる
     initializeSystem();
+
 }
 
 async function initializeSystem() {

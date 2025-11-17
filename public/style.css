@@ -161,7 +161,7 @@ body {
 .modal-content { background-color: white; margin: 5vh auto; padding: 30px; border-radius: 15px; width: 90%; position: relative; animation: slideIn 0.3s; display: flex; flex-direction: column; max-height: 90vh; overflow-y: auto;}
 .modal-content.large { max-width: 1000px; }
 @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.close { color: #aaa; float: right; font-size: 35px; font-weight: bold; cursor: pointer; line-height: 1; }
+.close { color: #aaa; float: right; font-size: 35px; font-weight: bold; cursor: pointer; line-height: 1; position: absolute; top: 15px; right: 25px;}
 .close:hover { color: black; }
 .modal-content h2 { color: var(--primary-color); margin-bottom: 10px; }
 .modal-instruction { color: #555; margin-bottom: 20px; text-align: center; }
