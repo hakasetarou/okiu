@@ -393,133 +393,261 @@ function refreshUI() { renderParkingLots(); updateStats(); displayMyParkingStatu
 // =================================================================================
 
 // 時刻モーダルを開く
+
 function openEndTimeModal(lotId, spaceId) {
+
     const modal = document.getElementById('endTimeModal');
+
     const title = document.getElementById('endTimeModalTitle');
+
     const timeInput = document.getElementById('endTimeInput');
 
     // 現在時刻をデフォルト値として設定
+
     const now = new Date();
+
     const hours = now.getHours().toString().padStart(2, '0');
+
     const minutes = now.getMinutes().toString().padStart(2, '0');
+
     timeInput.value = `${hours}:${minutes}`;
+
+
 
     title.textContent = `${lotId} の ${spaceId}番 に駐車`;
 
+
+
     // ★ OKボタンに、クリックされた場所の情報を一時的に保存
+
     const submitBtn = document.getElementById('endTimeSubmitBtn');
+
     submitBtn.dataset.lotId = lotId;
+
     submitBtn.dataset.spaceId = spaceId;
 
+
+
     modal.style.display = 'block';
+
 }
+
+
 
 // 時刻モーダルを閉じる
+
 function closeEndTimeModal() {
+
     const modal = document.getElementById('endTimeModal');
+
     modal.style.display = 'none';
+
 }
+
+
 
 // 時刻モーダルの「OK」または「未定」が押されたときの処理
+
 function handleEndTimeSubmit(isUncertain = false) {
+
     const submitBtn = document.getElementById('endTimeSubmitBtn');
+
     const lotId = submitBtn.dataset.lotId;
+
     const spaceId = submitBtn.dataset.spaceId;
 
+
+
     let endTimeToSend;
+
     if (isUncertain) {
+
         endTimeToSend = "未定";
+
     } else {
+
         const timeInput = document.getElementById('endTimeInput');
+
         if (timeInput.value === "") {
+
             showNotification('時刻が入力されていません。「予定は未定」を押してください。', 'error');
+
             return;
+
         }
+
         endTimeToSend = timeInput.value;
+
     }
+
+
 
     // サーバーに送信する処理を呼び出す
+
     processSpaceCheckin(lotId, spaceId, endTimeToSend);
+
 }
 
+
+
 // =================================================================================
+
 // 画像拡大モーダル関連の関数
+
 // =================================================================================
+
 function openImageZoomModal(imageUrl) {
+
     const imageZoomModal = document.getElementById('imageZoomModal');
+
     const zoomedImage = document.getElementById('zoomedImage');
 
+
+
     zoomedImage.src = imageUrl;
+
     imageZoomModal.style.display = 'block'; // 拡大モーダルを表示
+
 }
+
+
 
 function closeImageZoomModal() {
+
     const imageZoomModal = document.getElementById('imageZoomModal');
+
     imageZoomModal.style.display = 'none'; // 拡大モーダルを非表示
+
 }
 
+
+
 // =================================================================================
+
 // ★★★★★ アプリケーション起動時の処理 (最終・完成版) ★★★★★
+
 // =================================================================================
+
 document.addEventListener('DOMContentLoaded', () => {
+
     // ログイン画面を初期表示
+
     showLoginScreen();
 
+
+
     // ----- 1. フォームの「送信(submit)」イベント（エンターキー対応） -----
+
     const loginForm = document.getElementById('loginMode');
+
     if (loginForm) {
+
         loginForm.addEventListener('submit', handleLogin);
+
     }
+
     const registerForm = document.getElementById('registerMode');
+
     if (registerForm) {
+
         registerForm.addEventListener('submit', handleRegister);
+
     }
+
+
 
     // ★★★★★ 2. ログイン/登録切り替えリンク (ここが修正・追加箇所) ★★★★★
+
     const switchToRegisterLink = document.getElementById('switchToRegisterLink');
+
     if (switchToRegisterLink) {
+
         switchToRegisterLink.addEventListener('click', (event) => {
+
             event.preventDefault(); // リンクの標準動作を防ぐ
+
             switchToRegister();
+
         });
+
     }
+
     const switchToLoginLink = document.getElementById('switchToLoginLink');
+
     if (switchToLoginLink) {
+
         switchToLoginLink.addEventListener('click', (event) => {
+
             event.preventDefault(); // リンクの標準動作を防ぐ
+
             switchToLogin();
+
         });
+
     }
+
+
 
     // ----- 3. メインシステムのボタン -----
+
     const logoutButton = document.querySelector('.logout-btn');
+
     if (logoutButton) {
+
         logoutButton.addEventListener('click', handleLogout);
+
     }
+
+
 
     // ----- 4. 詳細モーダルの閉じるボタン -----
+
     const closeDetailModalButton = document.querySelector('#lotDetailModal .close');
+
     if (closeDetailModalButton) {
+
         closeDetailModalButton.addEventListener('click', closeDetailModal);
-    }
-    
-    // ----- 5. 画像拡大モーダルの閉じるボタン -----
-    const closeZoomModalButton = document.querySelector('.close-zoom-modal');
-    if (closeZoomModalButton) {
-        closeZoomModalButton.addEventListener('click', closeImageZoomModal);
+
     }
 
+    
+
+    // ----- 5. 画像拡大モーダルの閉じるボタン -----
+
+    const closeZoomModalButton = document.querySelector('.close-zoom-modal');
+
+    if (closeZoomModalButton) {
+
+        closeZoomModalButton.addEventListener('click', closeImageZoomModal);
+
+    }
+
+
+
     // ----- 6. 時刻入力モーダルのボタン -----
+
     const closeEndTimeModalBtn = document.getElementById('closeEndTimeModal');
+
     if (closeEndTimeModalBtn) {
+
         closeEndTimeModalBtn.addEventListener('click', closeEndTimeModal);
+
     }
+
     const endTimeSubmitBtn = document.getElementById('endTimeSubmitBtn');
+
     if (endTimeSubmitBtn) {
+
         endTimeSubmitBtn.addEventListener('click', () => handleEndTimeSubmit(false)); // OKボタン
+
     }
+
     const endTimeUncertainBtn = document.getElementById('endTimeUncertainBtn');
+
     if (endTimeUncertainBtn) {
+
         endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true)); // 未定ボタン
+
     }
+
 });
