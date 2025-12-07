@@ -399,4 +399,47 @@ body {
         top: 15px;      /* 上からの位置（微調整） */
         right: 15px;
     }
+    /* =========================================
+   ログアウト確認モーダル用のスタイル
+   ========================================= */
+.small-modal {
+    max-width: 300px; /* 小さめのウィンドウにする */
+    text-align: center; /* 文字を真ん中に */
+    margin: 15% auto; /* 上下の位置調整 */
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-around; /* ボタンを等間隔に */
+    margin-top: 20px;
+    gap: 10px;
+}
+
+/* 「ログアウト（はい）」ボタン - 赤っぽくして警告感を出す */
+.danger-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* 「キャンセル（いいえ）」ボタン - 地味にする */
+.secondary-btn {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* スマホの時は、モーダルを画面のど真ん中に持ってくる */
+@media (max-width: 768px) {
+    .small-modal {
+        margin: 50% auto; /* 画面の中央付近に下げる */
+        width: 85%;
+    }
+}
 }

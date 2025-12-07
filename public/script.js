@@ -125,11 +125,35 @@ async function handleLogin(event) {
 }
 
 function handleLogout() {
-    if (confirm('ログアウトしますか？')) {
-        currentUser = null;
-        myParkingInfo = null;
-        showLoginScreen();
+    const modal = document.getElementById('logoutModal');
+    if (modal) modal.style.display = 'block';
+}
+// 【新規】ログアウトモーダルを閉じる関数
+function closeLogoutModal() {
+    const modal = document.getElementById('logoutModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// 【新規】実際にログアウト処理を行う関数（「はい」が押された時）
+async function processLogout() {
+    // サーバーにログアウト通知を送る（既存の処理と同じ）
+    // ※もしセッション管理などをしていないなら、ここは省略しても画面切り替えだけで動きますが、念のため残します
+    try {
+        /* 必要に応じてAPIリクエストを送る */
+        // await apiRequest('/api/logout', { method: 'POST' }); 
+    } catch (error) {
+        console.error(error);
     }
+
+    // ユーザー情報を消す
+    currentUser = null;
+    myParkingInfo = null;
+
+    // 画面を切り替える
+    showLoginScreen();
+    
+    // モーダルを閉じる
+    closeLogoutModal();
 }
 
 
@@ -142,6 +166,7 @@ function showLoginScreen() {
     closeDetailModal();     // 詳細モーダルを閉じる
     closeEndTimeModal();    // 時刻入力モーダルを閉じる
     closeImageZoomModal();  // 画像拡大モーダルを閉じる
+    closeLogoutModal();
 }
 
 function showMainSystem() {
@@ -150,6 +175,7 @@ function showMainSystem() {
     closeDetailModal();     // 詳細モーダルを閉じる
     closeEndTimeModal();    // 時刻入力モーダルを閉じる
     closeImageZoomModal();  // 画像拡大モーダルを閉じる
+    closeLogoutModal();
     initializeSystem();
 
 }
@@ -648,6 +674,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         endTimeUncertainBtn.addEventListener('click', () => handleEndTimeSubmit(true)); // 未定ボタン
 
+    }
+    // ログアウト確認モーダルの「ログアウト（はい）」ボタン
+    const confirmLogoutBtn = document.getElementById('confirmLogoutBtn');
+    if (confirmLogoutBtn) {
+        confirmLogoutBtn.addEventListener('click', processLogout);
+    }
+
+    // ログアウト確認モーダルの「キャンセル（いいえ）」ボタン
+    const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
+    if (cancelLogoutBtn) {
+        cancelLogoutBtn.addEventListener('click', closeLogoutModal);
     }
 
 });
