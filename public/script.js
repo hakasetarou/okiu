@@ -194,34 +194,65 @@ async function initializeSystem() {
 
 
 // =================================================================================
-// 駐車場関連の処理 (変更なし)
+// 駐車場関連の処理 (リッチデザイン版・詳細情報なし)
 // =================================================================================
-function renderParkingLots() {
+async function renderParkingLots() {
     const container = document.getElementById('parkingLots');
     if(!container) return;
-    container.innerHTML = '';
+    
+    container.innerHTML = ''; // 画面クリア
+
+    // parkingDataはグローバル変数を使います
     parkingData.forEach(lot => {
-        const availableCount = lot.available;
-        const statusClass = getStatusClass(availableCount, lot.capacity);
-        const statusText = getStatusText(availableCount, lot.capacity);
-        const lotElement = document.createElement('div');
-        lotElement.className = 'parking-lot';
-        lotElement.onclick = () => showLotDetail(lot.id); // HTMLのonclick属性の代わりにここで設定
-        lotElement.innerHTML = `
-            <div class="lot-header ${statusClass}">
-                <span>${lot.name}</span>
-                <span>${statusText}</span>
+        const lotDiv = document.createElement('div');
+        lotDiv.className = 'parking-lot'; // CSSクラス
+
+        // --- 1. 計算ロジック ---
+        const used = lot.capacity - lot.available; // 使用台数
+        let percentage = Math.round((used / lot.capacity) * 100);
+        if (isNaN(percentage)) percentage = 0;
+
+        // --- 2. 色と状態の判定 ---
+        let headerColorClass = 'header-green';
+        let barColorClass = 'bg-green';
+        let statusText = '空きあり';
+
+        if (percentage >= 100) {
+            headerColorClass = 'header-red';
+            barColorClass = 'bg-red';
+            statusText = '満車';
+        } else if (percentage >= 80) {
+            headerColorClass = 'header-orange';
+            barColorClass = 'bg-orange';
+            statusText = '残りわずか';
+        }
+
+        // --- 3. HTML生成 (info-gridを削除済み) ---
+        lotDiv.innerHTML = `
+            <div class="card-header ${headerColorClass}">
+                <span class="lot-name">${lot.name}</span>
+                <span class="lot-status">${statusText}</span>
             </div>
-            <div class="lot-info">
-                <div class="capacity-text">
-                    空き: <span style="font-size: 1.5em;">${availableCount}</span> / ${lot.capacity}台
+
+            <div class="card-body">
+                <div class="stats-row">
+                    <span class="available-text">空き: ${lot.available}台</span>
+                    <span class="total-text">総数: ${lot.capacity}台</span>
                 </div>
-                <div class="lot-actions">
-                    <button class="detail-btn">詳細を見る</button>
+
+                <div class="progress-track">
+                    <div class="progress-bar ${barColorClass}" style="width: ${percentage}%">
+                        ${percentage}% 使用中
+                    </div>
                 </div>
+
+                <button class="action-btn" style="margin-top: 15px;" onclick="showLotDetail('${lot.id}')">
+                    詳細・マップを見る
+                </button>
             </div>
         `;
-        container.appendChild(lotElement);
+
+        container.appendChild(lotDiv);
     });
 }
 

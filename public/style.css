@@ -443,3 +443,100 @@ body {
     }
 }
 }
+/* =========================================
+   リッチな駐車場カードのデザイン
+   ========================================= */
+
+/* カード全体の枠組み */
+.parking-lot {
+    padding: 0 !important;   /* 元の余白をリセット */
+    border: none !important; /* 元の枠線を消す */
+    border-radius: 12px;
+    overflow: hidden;        /* はみ出し防止 */
+    background: #fff;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 浮き出る影 */
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;     /* カード同士の間隔 */
+    transition: transform 0.2s; /* 押したときのアニメーション用 */
+}
+.parking-lot:active {
+    transform: scale(0.98); /* 押すと少し沈む */
+}
+
+/* 1. ヘッダー部分（オレンジや緑の帯） */
+.card-header {
+    padding: 15px 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between; /* 名前と状態を左右に */
+    align-items: center;
+    font-weight: bold;
+}
+.header-green { background-color: #28a745; }  /* 緑 */
+.header-orange { background-color: #fd7e14; } /* オレンジ */
+.header-red { background-color: #dc3545; }    /* 赤 */
+
+.lot-name { font-size: 1.2em; }
+.lot-status { font-size: 1.1em; background: rgba(0,0,0,0.2); padding: 2px 8px; border-radius: 4px; }
+
+/* 2. カードの中身 */
+.card-body {
+    padding: 20px;
+}
+
+/* 3. 台数情報の文字 */
+.stats-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+}
+.available-text { font-size: 1.4em; font-weight: bold; color: #333; }
+.total-text { font-size: 0.9em; color: #888; }
+
+/* 4. プログレスバー（メーター） */
+.progress-track {
+    width: 100%;
+    height: 18px;
+    background-color: #f1f1f1;
+    border-radius: 9px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    text-align: center;
+    line-height: 18px;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    transition: width 0.6s ease;
+}
+.bg-green { background-color: #28a745; }
+.bg-orange { background-color: #fd7e14; }
+.bg-red { background-color: #dc3545; }
+
+/* 5. 詳細情報（アイコン風テキスト） */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    font-size: 0.85em;
+    color: #555;
+    margin-bottom: 15px;
+}
+.info-item { display: flex; align-items: center; gap: 5px; }
+
+/* 6. 詳細ボタン */
+.action-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 1em;
+}

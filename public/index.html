@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>沖縄国際大学 駐車場管理システム</title>
-    <link rel="stylesheet" href="style.css?v=1.4">
+    <link rel="stylesheet" href="style.css?v=1.6">
 </head>
 <body>
 
@@ -17,27 +17,26 @@
             
             <div id="errorMessage" class="error-message hidden"></div>
 
-<form id="loginMode" class="login-form" onsubmit="handleLogin(event)">
-    <div class="form-group">
-        <label for="loginStudentId">学籍番号</label>
-        <input type="text" id="loginStudentId" required>
-    </div>
-    <div class="form-group">
-        <label for="loginPassword">パスワード</label>
-        <input type="password" id="loginPassword" required>
-    </div>
-<form id="loginMode" class="login-form">
-    <button type="submit" class="login-btn">ログイン</button>
-    <p class="switch-mode">
-        アカウントをお持ちでないですか？ 
-        <a href="#" id="switchToRegisterLink">新規登録</a>
-    </p>
-</form>
+            <form id="loginMode" class="login-form">
+                <div class="form-group">
+                    <label for="loginStudentId">学籍番号</label>
+                    <input type="text" id="loginStudentId" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">パスワード</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button type="submit" class="login-btn">ログイン</button>
+                <p class="switch-mode">
+                    アカウントをお持ちでないですか？ 
+                    <a href="#" id="switchToRegisterLink">新規登録</a>
+                </p>
+            </form>
 
             <form id="registerMode" class="login-form hidden">
                 <div class="form-group">
                     <label for="registerStudentId">学籍番号</label>
-                    <input type="text" id="registerStudentId" required>
+                    <input type="text" id="registerStudentId" required placeholder="例: 23db123">
                 </div>
                  <div class="form-group">
                     <label for="registerName">氏名</label>
@@ -45,34 +44,32 @@
                 </div>
                 <div class="form-group">
                     <label for="registerPassword">パスワード</label>
-                    <input type="password" id="registerPassword" required>
+                    <input type="password" id="registerPassword" required placeholder="英数字を含む8文字以上">
                 </div>
                 <div class="form-group">
                     <label for="registerPasswordConfirm">パスワード (確認用)</label>
                     <input type="password" id="registerPasswordConfirm" required>
                 </div>
-               <form id="registerMode" class="login-form hidden" onsubmit="handleRegister(event)">
-<form id="registerMode" class="login-form hidden">
-    <button type="submit" class="register-btn">登録する</button>
-     <p class="switch-mode">
-        すでにアカウントをお持ちですか？ 
-        <a href="#" id="switchToLoginLink">ログイン</a>
-    </p>
-</form>
+                <button type="submit" class="register-btn">登録する</button>
+                 <p class="switch-mode">
+                    すでにアカウントをお持ちですか？ 
+                    <a href="#" id="switchToLoginLink">ログイン</a>
+                </p>
+            </form>
         </div>
     </div>
+
     <div id="mainSystem" class="hidden">
         <div class="container">
             <div class="header">
                 <div id="userInfo" class="user-info"></div>
                 <button id="logoutButton" class="logout-btn">ログアウト</button>
-                <h1> 沖縄国際大学</h1>
+                <h1>沖縄国際大学</h1>
                 <div class="subtitle">駐車場管理システム</div>
                 <div class="last-updated" id="lastUpdated">最終更新: --</div>
             </div>
             
-            <div id="myParkingStatus" class="my-parking-status hidden">
-                </div>
+            <div id="myParkingStatus" class="my-parking-status hidden"></div>
 
             <div class="stats-bar">
                 <div class="stat-item">
@@ -93,54 +90,56 @@
                 </div>
         </div>
     </div>
+
     <div id="lotDetailModal" class="modal">
-            <div id="imageZoomModal" class="modal">
-        <div class="modal-content image-zoom-content">
-             <span class="close-zoom-modal">&times;</span>
-             <img id="zoomedImage" src="" alt="拡大画像" class="zoomed-image">
-    </div>
-</div>
-<div id="endTimeModal" class="modal">
-    <div class="modal-content">
-        <span id="closeEndTimeModal" class="close">&times;</span>
-        <h2 id="endTimeModalTitle">退庫予定時刻の入力</h2>
-        <p class="modal-instruction">退庫する予定時刻を選択してください。</p>
-
-        <div class="form-group">
-            <label for="endTimeInput">予定時刻:</label>
-            <input type="time" id="endTimeInput" class="time-input">
-        </div>
-
-        <div class="modal-actions">
-            <button id="endTimeUncertainBtn" class="modal-btn-secondary">予定は未定</button>
-            <button id="endTimeSubmitBtn" class="modal-btn-primary">OK</button>
-        </div>
-    </div>
-</div>
         <div class="modal-content large">
-            <span class="close" onclick="closeDetailModal()">&times;</span>
+            <span id="closeDetailModalButton" class="close">&times;</span>
             <h2 id="lotDetailTitle"></h2>
 
             <div class="lot-image-container">
                 <img id="lotDetailImage" src="" alt="駐車場画像" class="lot-image">
             </div>
             <p class="modal-instruction">空いているスペース（緑色）をクリックして駐車登録してください。</p>
-            <div class="parking-map-container" id="parkingMap">
-                </div>
+            <div class="parking-map-container" id="parkingMap"></div>
         </div>
     </div>
 
-    <script src="script.js"></script>
-</body>
-<div id="logoutModal" class="modal">
-    <div class="modal-content small-modal">
-        <h3>ログアウト確認</h3>
-        <p>本当にログアウトしますか？</p>
-        <div class="modal-actions">
-            <button id="confirmLogoutBtn" class="danger-btn">ログアウト</button>
-            <button id="cancelLogoutBtn" class="secondary-btn">キャンセル</button>
+    <div id="endTimeModal" class="modal">
+        <div class="modal-content">
+            <span id="closeEndTimeModal" class="close">&times;</span>
+            <h2 id="endTimeModalTitle">退庫予定時刻の入力</h2>
+            <p class="modal-instruction">退庫する予定時刻を選択してください。</p>
+
+            <div class="form-group">
+                <label for="endTimeInput">予定時刻:</label>
+                <input type="time" id="endTimeInput" class="time-input">
+            </div>
+
+            <div class="modal-actions">
+                <button id="endTimeUncertainBtn" class="modal-btn-secondary">予定は未定</button>
+                <button id="endTimeSubmitBtn" class="modal-btn-primary">OK</button>
+            </div>
         </div>
     </div>
-</div>
-<script src="script.js?v=1.6"></script> </body>
+
+    <div id="imageZoomModal" class="modal">
+        <div class="modal-content image-zoom-content">
+             <span class="close-zoom-modal">&times;</span>
+             <img id="zoomedImage" src="" alt="拡大画像" class="zoomed-image">
+        </div>
+    </div>
+
+    <div id="logoutModal" class="modal">
+        <div class="modal-content small-modal">
+            <h3>ログアウト確認</h3>
+            <p>本当にログアウトしますか？</p>
+            <div class="modal-actions">
+                <button id="confirmLogoutBtn" class="danger-btn">ログアウト</button>
+                <button id="cancelLogoutBtn" class="secondary-btn">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=1.7"></script>
+</body>
 </html>
