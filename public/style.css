@@ -311,106 +311,100 @@ body {
 @media (max-width: 768px) {
 
     /* 1. 全体のレイアウト調整 */
-    
     .container {
-        width: 100%; /* 画面幅いっぱい使う */
+        width: 100%;
         padding: 10px;
-        margin: 0 auto;          /* 上下は0、左右は自動（中央揃え）にする */
-        box-sizing: border-box;  /* paddingを含めて幅を計算する（レイアウト崩れ防止） */
+        margin: 0 auto;
+        box-sizing: border-box;
     }
 
     /* 2. 駐車場リスト（A駐車場、B駐車場...）を縦並びにする */
     #parkingLots {
         display: flex;
-        flex-direction: column; /* 横並びから縦並びに変更 */
+        flex-direction: column;
         gap: 15px;
     }
     
     .parking-lot {
-        width: 100%; /* 横幅いっぱいに広げる */
+        width: 100%;
     }
 
     /* 3. モーダル（ポップアップ）をスマホ画面いっぱいに */
     .modal-content {
-        width: 95%;      /* ほぼ画面幅いっぱい */
-        margin: 5% auto; /* 上下の余白を狭く */
-        padding: 15px;   /* 内側の余白を少し減らす */
+        width: 95%;
+        margin: 5% auto;
+        padding: 15px;
     }
     
     /* 4. 駐車マップ（緑や赤のマス目）の調整 */
     #parkingMap {
-        /* マス目の間隔を詰める */
         gap: 5px; 
     }
 
     .parking-space {
-        /* スマホでは指で押しやすいように高さは確保しつつ、文字は小さく */
         height: 50px; 
         font-size: 0.7em; 
         padding: 2px;
     }
     
-    /* マスの中の数字と時間の文字サイズ調整 */
     .parking-space span:first-child {
-        font-size: 1.1em; /* 番号 */
+        font-size: 1.1em;
     }
     .space-time {
-        font-size: 0.8em; /* 時間 */
+        font-size: 0.8em;
     }
 
     /* 5. 閉じるボタン（×）の位置調整 */
     .close {
         top: 10px;
         right: 15px;
-        font-size: 30px; /* 少し指で押しやすく */
+        font-size: 30px;
     }
     
     /* 6. ログインフォームなどの調整 */
     .form-group input {
-        font-size: 16px; /* スマホで入力時にズームされないための対策 */
+        font-size: 16px;
         padding: 12px;
     }
     
     button {
-        padding: 12px; /* 指でタップしやすい大きさに */
+        padding: 12px;
     }
-    /* ヘッダーの上部に「余白」を作って、タイトルを押し下げる */
+
+    /* ヘッダーの調整 */
     .header {
-        /* 上に80px分の余白を作る */
-        /* これにより、タイトル文字が下に下がります */
         padding-top: 80px; 
-        
-        /* 念のため高さを自動調整に */
         height: auto;
         padding-bottom: 20px; 
     }
 
-    /* 左上のユーザー名（固定のまま、文字サイズだけ調整） */
     #userInfo {
-        font-size: 12px; /* スマホだと名前が長いと被るかもしれないので少し小さく */
-        top: 15px;      /* 上からの位置（微調整） */
+        font-size: 12px;
+        top: 15px;
         left: 15px;
     }
 
-    /* 右上のログアウトボタン（固定のまま、サイズだけ調整） */
     .logout-btn {
-        padding: 5px 15px; /* ボタンを少し小ぶりに */
+        padding: 5px 15px;
         font-size: 12px;
-        top: 15px;      /* 上からの位置（微調整） */
+        top: 15px;
         right: 15px;
     }
-    /* =========================================
-   ログアウト確認モーダル用のスタイル
+} /* ★★★ ここでスマホ用設定を終わらせる！ ★★★ */
+
+
+/* =========================================
+   ログアウト確認モーダル用のスタイル (ここからはPC/スマホ共通)
    ========================================= */
 .small-modal {
-    max-width: 300px; /* 小さめのウィンドウにする */
-    text-align: center; /* 文字を真ん中に */
-    margin: 15% auto; /* 上下の位置調整 */
+    max-width: 300px;
+    text-align: center;
+    margin: 15% auto;
 }
 
 .modal-actions {
     display: flex;
-    justify-content: space-around; /* ボタンを等間隔に */
+    justify-content: space-around;
     margin-top: 20px;
     gap: 10px;
 }
@@ -435,31 +429,30 @@ body {
     cursor: pointer;
 }
 
-/* スマホの時は、モーダルを画面のど真ん中に持ってくる */
+/* スマホの時は、モーダルを画面のど真ん中に持ってくる（上書き設定） */
 @media (max-width: 768px) {
     .small-modal {
-        margin: 50% auto; /* 画面の中央付近に下げる */
+        margin: 50% auto;
         width: 85%;
     }
 }
-}
-/* =========================================
-   リッチな駐車場カードのデザイン
-   ========================================= */
 
-/* カード全体の枠組み */
+/* =========================================
+   リッチな駐車場カードのデザイン (ここも共通)
+   ========================================= */
 .parking-lot {
-    padding: 0 !important;   /* 元の余白をリセット */
-    border: none !important; /* 元の枠線を消す */
+    padding: 0 !important;
+    border: none !important;
     border-radius: 12px;
-    overflow: hidden;        /* はみ出し防止 */
+    overflow: hidden;
     background: #fff;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1); /* 浮き出る影 */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     display: flex;
     flex-direction: column;
-    margin-bottom: 20px;     /* カード同士の間隔 */
-    transition: transform 0.2s; /* 押したときのアニメーション用 */
+    margin-bottom: 20px;
+    transition: transform 0.2s;
 }
+
 .parking-lot:active {
     transform: scale(0.98); /* 押すと少し沈む */
 }
@@ -498,7 +491,7 @@ body {
 /* 4. プログレスバー（メーター） */
 .progress-track {
     width: 100%;
-    height: 18px;
+    height: 20px;
     background-color: #f1f1f1;
     border-radius: 9px;
     margin-bottom: 20px;
@@ -508,9 +501,9 @@ body {
     height: 100%;
     text-align: center;
     line-height: 18px;
-    color: white;
-    font-size: 11px;
+    color: black;
     font-weight: bold;
+    font-size: 18px;
     transition: width 0.6s ease;
 }
 .bg-green { background-color: #28a745; }

@@ -194,25 +194,27 @@ async function initializeSystem() {
 
 
 // =================================================================================
-// 駐車場関連の処理 (リッチデザイン版・詳細情報なし)
+// 駐車場関連の処理 (テンプレート利用版：HTMLタグなし)
 // =================================================================================
 async function renderParkingLots() {
     const container = document.getElementById('parkingLots');
-    if(!container) return;
+    const template = document.getElementById('parking-card-template'); // ★設計図を取得
+    
+    if(!container || !template) return;
     
     container.innerHTML = ''; // 画面クリア
 
     // parkingDataはグローバル変数を使います
     parkingData.forEach(lot => {
-        const lotDiv = document.createElement('div');
-        lotDiv.className = 'parking-lot'; // CSSクラス
+        // 1. 設計図（テンプレート）を複製する
+        const clone = template.content.cloneNode(true);
 
-        // --- 1. 計算ロジック ---
-        const used = lot.capacity - lot.available; // 使用台数
+        // --- 計算ロジック ---
+        const used = lot.capacity - lot.available;
         let percentage = Math.round((used / lot.capacity) * 100);
         if (isNaN(percentage)) percentage = 0;
 
-        // --- 2. 色と状態の判定 ---
+        // --- 色とテキストの決定 ---
         let headerColorClass = 'header-green';
         let barColorClass = 'bg-green';
         let statusText = '空きあり';
@@ -227,32 +229,32 @@ async function renderParkingLots() {
             statusText = '残りわずか';
         }
 
-        // --- 3. HTML生成 (info-gridを削除済み) ---
-        lotDiv.innerHTML = `
-            <div class="card-header ${headerColorClass}">
-                <span class="lot-name">${lot.name}</span>
-                <span class="lot-status">${statusText}</span>
-            </div>
+        // --- 2. 複製した設計図に、データを埋め込む ---
+        
+        // ヘッダーの色設定
+        const header = clone.querySelector('.card-header');
+        header.classList.add(headerColorClass);
 
-            <div class="card-body">
-                <div class="stats-row">
-                    <span class="available-text">空き: ${lot.available}台</span>
-                    <span class="total-text">総数: ${lot.capacity}台</span>
-                </div>
+        // 駐車場名と状態
+        clone.querySelector('.lot-name').textContent = lot.name;
+        clone.querySelector('.lot-status').textContent = statusText;
 
-                <div class="progress-track">
-                    <div class="progress-bar ${barColorClass}" style="width: ${percentage}%">
-                        ${percentage}% 使用中
-                    </div>
-                </div>
+        // 台数情報
+        clone.querySelector('.available-text').textContent = `空き: ${lot.available}台`;
+        clone.querySelector('.total-text').textContent = `総数: ${lot.capacity}台`;
 
-                <button class="action-btn" style="margin-top: 15px;" onclick="showLotDetail('${lot.id}')">
-                    詳細・マップを見る
-                </button>
-            </div>
-        `;
+        // プログレスバーの設定
+        const bar = clone.querySelector('.progress-bar');
+        bar.style.width = `${percentage}%`;
+        bar.textContent = `${percentage}% 使用中`;
+        bar.classList.add(barColorClass);
 
-        container.appendChild(lotDiv);
+        // ボタンのクリックイベント設定
+        const btn = clone.querySelector('.action-btn');
+        btn.onclick = () => showLotDetail(lot.id);
+
+        // --- 3. 完成したカードを画面に追加 ---
+        container.appendChild(clone);
     });
 }
 
