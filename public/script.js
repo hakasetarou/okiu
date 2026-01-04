@@ -128,6 +128,21 @@ function handleLogout() {
     const modal = document.getElementById('logoutModal');
     if (modal) modal.style.display = 'block';
 }
+// 1. モーダルを表示する関数
+function openCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    if (modal) {
+        modal.style.display = 'block'; // 画面に出す
+    }
+}
+
+// 2. モーダルを非表示にする（閉じる）関数
+function closeCheckoutModal() {
+    const modal = document.getElementById('checkoutModal');
+    if (modal) {
+        modal.style.display = 'none'; // 画面から消す
+    }
+}
 // 【新規】ログアウトモーダルを閉じる関数
 function closeLogoutModal() {
     const modal = document.getElementById('logoutModal');
@@ -399,25 +414,39 @@ async function processSpaceCheckin(lotId, spaceId, endTimeToSend) {
     }
 }
 
-async function processSpaceCheckout() {
-    if (!confirm('本当に退庫しますか？')) return;
+// 【変更】ボタンが押されたら、いきなり処理せず「モーダルを開く」だけにする
+function processSpaceCheckout() {
+    // 以前の confirm('本当に退庫しますか？') は削除！
+    openCheckoutModal(); 
+}
 
+// 【新規】モーダルの「退庫する」が押された時に実行される関数
+async function executeCheckout() {
     try {
+        // サーバーに「退庫します」と伝える（既存の処理と同じ）
         await apiRequest('/api/parking/checkout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.studentId })
         });
-        showNotification('出庫しました。', 'success');
-        myParkingInfo = null;
         
+        showNotification('出庫しました。', 'success');
+        myParkingInfo = null; // 自分の情報をクリア
+        
+        // 画面の数字などを最新にする
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
+        
+        // 開いているモーダルをすべて閉じる
         closeDetailModal();
+        closeCheckoutModal(); // ★ここが重要！
+
     } catch (error) {
-        // apiRequest関数でエラーが表示される
+        // エラーは apiRequest 内で表示されるので、ここでは何もしない（ログだけ）
+        console.error(error);
     }
 }
+
 
 
 // =================================================================================
@@ -718,6 +747,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelLogoutBtn = document.getElementById('cancelLogoutBtn');
     if (cancelLogoutBtn) {
         cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+    }
+    // ----- 7. 退庫確認モーダルのボタン設定 (ここを追加) -----
+    
+    // 「退庫する」ボタンの設定
+    const confirmCheckoutBtn = document.getElementById('confirmCheckoutBtn');
+    if (confirmCheckoutBtn) {
+        // クリックされたら、さっき作った「実行関数」を呼ぶ
+        confirmCheckoutBtn.addEventListener('click', executeCheckout);
+    }
+
+    // 「キャンセル」ボタンの設定
+    const cancelCheckoutBtn = document.getElementById('cancelCheckoutBtn');
+    if (cancelCheckoutBtn) {
+        // クリックされたら、「閉じる関数」を呼ぶ
+        cancelCheckoutBtn.addEventListener('click', closeCheckoutModal);
     }
 
 });

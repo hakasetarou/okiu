@@ -88,7 +88,7 @@ router.get('/parking-data', async (req, res) => {
             GROUP BY 
                 p.id, p.name, p.capacity, p.image_url -- ← 追加
             ORDER BY
-                p.name;
+                p.id;
         `;
         const result = await pool.query(query);
 
