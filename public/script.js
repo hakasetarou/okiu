@@ -51,8 +51,6 @@ function switchAuthMode(mode) {
     hideError();
 }
 
-// ※switchToLogin と switchToRegister は HTMLの onclick からは使わなくなったため削除可能ですが、
-// 　handleRegister内などで使っているので残しておきます。
 const switchToLogin = () => switchAuthMode('login');
 const switchToRegister = () => switchAuthMode('register');
 
@@ -223,6 +221,8 @@ async function renderParkingLots() {
     parkingData.forEach(lot => {
         // 1. 設計図（テンプレート）を複製する
         const clone = template.content.cloneNode(true);
+        const cardElement = clone.querySelector('.parking-lot');
+        
 
         // --- 計算ロジック ---
         const used = lot.capacity - lot.available;
@@ -238,6 +238,8 @@ async function renderParkingLots() {
             headerColorClass = 'header-red';
             barColorClass = 'bg-red';
             statusText = '満車';
+            cardElement.style.opacity = '0.5'; 
+            cardElement.style.filter = 'grayscale(30%)';
         } else if (percentage >= 80) {
             headerColorClass = 'header-orange';
             barColorClass = 'bg-orange';
@@ -354,23 +356,27 @@ function displayMyParkingStatus() {
         if (parkedLot) {
             const elapsedTime = getElapsedTime(myParkingInfo.start_time);
             
-            // ★★★ HTMLの壊れを修正 ★★★
+            // 短いテキストに変更
             const endTimeDisplay = myParkingInfo.estimated_end_time 
-                ? `<p><strong>退庫予定:</strong> ${myParkingInfo.estimated_end_time}</p>` 
+                ? `<span>予定: ${myParkingInfo.estimated_end_time}</span>` 
                 : '';
 
+            // ★ここから新しいコンパクトなHTML構造★
             statusDiv.innerHTML = `
-                <div class="my-status-card">
-                    <h4>現在の駐車状況</h4>
-                    <p><strong>場所:</strong> ${parkedLot.name} (${myParkingInfo.space_id})</p>
-                    ${endTimeDisplay}
-                    <p><strong>経過時間:</strong> ${elapsedTime}</p> 
-                    <button class="checkout-btn" id="mainCheckoutButton">ここから出庫</button>
+                <div class="my-status-compact">
+                    <div class="my-status-details">
+                        <div class="my-status-title">
+                            <span class="pulse-dot"></span> 駐車中: ${parkedLot.name} (${myParkingInfo.space_id})
+                        </div>
+                        <div class="my-status-time">
+                            ${endTimeDisplay}
+                            <span>経過: ${elapsedTime}</span>
+                        </div>
+                    </div>
+                    <button class="checkout-btn" id="mainCheckoutButton">出庫する</button>
                 </div>
             `;
-            // ★★★ 修正ここまで ★★★
 
-            // 動的に生成したボタンにイベントリスナーを追加
             const checkoutBtn = document.getElementById('mainCheckoutButton');
             if (checkoutBtn) {
                 checkoutBtn.addEventListener('click', processSpaceCheckout);
