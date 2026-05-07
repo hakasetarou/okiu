@@ -205,24 +205,40 @@ async function initializeSystem() {
     }
 }
 
-
 // =================================================================================
 // 駐車場関連の処理 (テンプレート利用版：HTMLタグなし)
 // =================================================================================
 async function renderParkingLots() {
     const container = document.getElementById('parkingLots');
-    const template = document.getElementById('parking-card-template'); // ★設計図を取得
+    const template = document.getElementById('parking-card-template'); 
     
     if(!container || !template) return;
     
     container.innerHTML = ''; // 画面クリア
 
-    // parkingDataはグローバル変数を使います
+    // --- ★★★ ここから追加：A案（満車を沈める）のロジック ★★★ ---
+    const availableLots = []; // 空きがある駐車場を入れる箱
+    const fullLots = [];      // 満車の駐車場を入れる箱
+
+    // 1. 駐車場を「空きあり」と「満車」に仕分ける
     parkingData.forEach(lot => {
-        // 1. 設計図（テンプレート）を複製する
+        if (lot.available <= 0) {
+            fullLots.push(lot); // 満車ならこっち
+        } else {
+            availableLots.push(lot); // 空きがあればこっち
+        }
+    });
+
+    // 2. 空きありのグループの後に、満車のグループをくっつける
+    const sortedParkingData = [...availableLots, ...fullLots];
+    // --- ★★★ 追加ここまで ★★★ ---
+
+
+    // 3. 並び替えたデータ（sortedParkingData）を使って画面を作る
+    sortedParkingData.forEach(lot => {
+        // 設計図（テンプレート）を複製する
         const clone = template.content.cloneNode(true);
-        const cardElement = clone.querySelector('.parking-lot');
-        
+        const cardElement = clone.querySelector('.parking-lot'); 
 
         // --- 計算ロジック ---
         const used = lot.capacity - lot.available;
@@ -238,6 +254,7 @@ async function renderParkingLots() {
             headerColorClass = 'header-red';
             barColorClass = 'bg-red';
             statusText = '満車';
+            // 満車時の半透明処理
             cardElement.style.opacity = '0.5'; 
             cardElement.style.filter = 'grayscale(30%)';
         } else if (percentage >= 80) {
@@ -246,7 +263,7 @@ async function renderParkingLots() {
             statusText = '残りわずか';
         }
 
-        // --- 2. 複製した設計図に、データを埋め込む ---
+        // --- 複製した設計図に、データを埋め込む ---
         
         // ヘッダーの色設定
         const header = clone.querySelector('.card-header');
@@ -266,14 +283,14 @@ async function renderParkingLots() {
         bar.textContent = `${percentage}% 使用中`;
         bar.classList.add(barColorClass);
 
-        // ボタンのクリックイベント設定
-        const btn = clone.querySelector('.action-btn');
-        btn.onclick = () => showLotDetail(lot.id);
+        // カード全体にクリックイベントを設定
+        cardElement.onclick = () => showLotDetail(lot.id);
 
-        // --- 3. 完成したカードを画面に追加 ---
+        // --- 完成したカードを画面に追加 ---
         container.appendChild(clone);
     });
 }
+
 
 function showLotDetail(lotId) {
     const lot = parkingData.find(l => l.id === lotId);
