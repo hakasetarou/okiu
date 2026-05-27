@@ -283,8 +283,7 @@ async function renderParkingLots() {
         bar.textContent = `${percentage}% 使用中`;
         bar.classList.add(barColorClass);
 
-        // カード全体にクリックイベントを設定
-        cardElement.onclick = () => showLotDetail(lot.id);
+        cardElement.onclick = () => showLotDetail(lot.id);  
 
         // --- 完成したカードを画面に追加 ---
         container.appendChild(clone);
