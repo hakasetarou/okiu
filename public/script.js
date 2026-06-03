@@ -284,16 +284,42 @@ async function renderParkingLots() {
         bar.classList.add(barColorClass);
 
         // =========================================================
-        // 【ここを書き換えます：条件を消して強制突破！】
-        cardElement.onclick = () => {
-            // 裏側で実際にどんな名前で登録されているか確認するための隠しメッセージ
-            console.log("カードが押されました。データ:", lot.name, "ID:", lot.id);
+        // 【1 と 3 の実装】カード自体へのクリックを無効にし、2つのボタンを追加する
+        // =========================================================
+        cardElement.style.cursor = 'default'; // カード全体は押せないようにする
+        
+        // 以前の cardElement.onclick = ... は完全に消去します
+
+        // ボタンを入れる箱（コンテナ）を作る
+        const actionsContainer = document.createElement('div');
+        actionsContainer.className = 'card-actions';
+
+        // 🗺️ マップから探すボタン（※機能2：今は準備中にしておきます）
+        const mapBtn = document.createElement('button');
+        mapBtn.className = 'action-btn btn-map';
+        mapBtn.innerHTML = '🗺️ マップから探す';
+        mapBtn.onclick = (e) => {
+            e.stopPropagation(); // 他のクリック判定をブロック
             
-            // ★ 古い画面（showLotDetail）は絶対に呼ばれないようにします！
-            
-            // どのカードを押しても強制的にA案の新しいマップを開く！
-            openInteractiveMap(1, 'images/img1.jpg'); 
+            // ★最後に「2」を実装するときにここを書き換えます！
+            alert('マップ機能は現在準備中です！座標データの完成をお待ちください！'); 
         };
+
+        // 🔢 番号から探すボタン（※機能3：以前のリスト方式）
+        const numberBtn = document.createElement('button');
+        numberBtn.className = 'action-btn btn-number';
+        numberBtn.innerHTML = '🔢 番号から探す';
+        numberBtn.onclick = (e) => {
+            e.stopPropagation();
+            
+            // 従来の「四角いマス目が並んだ詳細画面」を開く
+            showLotDetail(lot.id);
+        };
+
+        // 箱に2つのボタンを入れて、カードの最後に追加する
+        actionsContainer.appendChild(mapBtn);
+        actionsContainer.appendChild(numberBtn);
+        cardElement.appendChild(actionsContainer);
         // =========================================================
         
         // --- 完成したカードを画面に追加 ---
