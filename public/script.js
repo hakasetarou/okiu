@@ -277,21 +277,22 @@ async function renderParkingLots() {
         clone.querySelector('.available-text').textContent = `空き: ${lot.available}台`;
         clone.querySelector('.total-text').textContent = `総数: ${lot.capacity}台`;
 
-        // ★ プログレスバー（bar）の設定はここに1回だけ書きます ★
+// ★ プログレスバー（bar）の設定
         const bar = clone.querySelector('.progress-bar');
         bar.style.width = `${percentage}%`;
         bar.textContent = `${percentage}% 使用中`;
         bar.classList.add(barColorClass);
 
         // =========================================================
-        // 【ここが新機能の分岐】
-        // idが 1 の場合、または 名前が「A駐車場」の場合に新しいマップを開く
+        // 【ここを書き換えます：条件を消して強制突破！】
         cardElement.onclick = () => {
-            if (lot.id === 1 || lot.name === 'A駐車場' || lot.name === '第1駐車場') {
-                openInteractiveMap(lot.id, 'images/img1.jpg'); 
-            } else {
-                showLotDetail(lot.id);
-            }
+            // 裏側で実際にどんな名前で登録されているか確認するための隠しメッセージ
+            console.log("カードが押されました。データ:", lot.name, "ID:", lot.id);
+            
+            // ★ 古い画面（showLotDetail）は絶対に呼ばれないようにします！
+            
+            // どのカードを押しても強制的にA案の新しいマップを開く！
+            openInteractiveMap(1, 'images/img1.jpg'); 
         };
         // =========================================================
         
@@ -863,27 +864,32 @@ function openInteractiveMap(lotId, imgSrc) {
 
 // 3. エリアがタップされた時の「自動割り当て」処理
 function handleAreaCheckIn(lotId, areaName) {
+    // マップを閉じる
     document.getElementById('interactiveMapModal').style.display = 'none';
 
-    // データベースから空いているマスを1つ探す
     const lot = parkingData.find(l => l.id === lotId);
     let targetSpaceId = null;
 
+    // もし詳細なデータがあればそこから探す
     if (lot && lot.spaces) {
         const availableSpace = lot.spaces.find(space => !space.isParked);
         if (availableSpace) {
             targetSpaceId = availableSpace.id;
         }
+    } else {
+        // ★★★ テスト用の追加ロジック ★★★
+        // データがまだない場合は、1〜530のランダムな数字を「仮の駐車場所」として割り当てる！
+        targetSpaceId = Math.floor(Math.random() * 530) + 1;
     }
 
     if (!targetSpaceId) {
-        showNotification(`${areaName} は現在満車です。別のエリアを選択してください。`, 'error');
+        alert(`${areaName} は現在満車です。別のエリアを選択してください。`);
         return;
     }
 
-    // トースト通知を出す（※今回はテストとして画面表示のみ行います）
-    showUndoToast(`${areaName}を選択: 【${targetSpaceId}】に駐車しました`, () => {
-        console.log(`【取り消し】 ${targetSpaceId} の駐車をキャンセルしました`);
+    // トースト通知を出す
+    showUndoToast(`${areaName}を選択: 【${targetSpaceId}番】に駐車しました`, () => {
+        console.log(`【取り消し】 ${targetSpaceId}番 の駐車をキャンセルしました`);
     });
 }
 
