@@ -277,19 +277,28 @@ async function renderParkingLots() {
         clone.querySelector('.available-text').textContent = `空き: ${lot.available}台`;
         clone.querySelector('.total-text').textContent = `総数: ${lot.capacity}台`;
 
-        // プログレスバーの設定
+        // ★ プログレスバー（bar）の設定はここに1回だけ書きます ★
         const bar = clone.querySelector('.progress-bar');
         bar.style.width = `${percentage}%`;
         bar.textContent = `${percentage}% 使用中`;
         bar.classList.add(barColorClass);
 
-        cardElement.onclick = () => showLotDetail(lot.id);  
-
+        // =========================================================
+        // 【ここが新機能の分岐】
+        // idが 1 の場合、または 名前が「A駐車場」の場合に新しいマップを開く
+        cardElement.onclick = () => {
+            if (lot.id === 1 || lot.name === 'A駐車場' || lot.name === '第1駐車場') {
+                openInteractiveMap(lot.id, 'images/img1.jpg'); 
+            } else {
+                showLotDetail(lot.id);
+            }
+        };
+        // =========================================================
+        
         // --- 完成したカードを画面に追加 ---
         container.appendChild(clone);
     });
 }
-
 
 function showLotDetail(lotId) {
     const lot = parkingData.find(l => l.id === lotId);
@@ -787,3 +796,108 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+// =================================================================================
+// ★★★ A案：エリア選択 ＆ 空きスペース自動割り当て機能 ★★★
+// =================================================================================
+
+// 1. Claudeで作った多角形の座標データ
+const PARKING_AREAS = [
+  { id: 1, name: "エリアA", polygon: [[480,200], [368,335], [573,521], [708,372], [481,199]] },
+  { id: 2, name: "エリアA2", polygon: [[347,362], [195,527], [395,785], [572,542], [347,356]] },
+  { id: 3, name: "エリアA3", polygon: [[445,720], [771,264], [897,407], [561,805], [446,720]] },
+  { id: 4, name: "エリアA4", polygon: [[728,212], [477,2], [404,87], [679,307], [732,206]] },
+  { id: 5, name: "エリアA5", polygon: [[384,102], [99,474], [179,525], [474,167], [386,99]] }
+];
+
+// 2. マップを開き、SVGで斜めのエリアを重ねて表示する
+function openInteractiveMap(lotId, imgSrc) {
+    let mapModal = document.getElementById('interactiveMapModal');
+    if (!mapModal) {
+        mapModal = document.createElement('div');
+        mapModal.id = 'interactiveMapModal';
+        mapModal.className = 'modal';
+        mapModal.style.zIndex = '3000';
+        document.body.appendChild(mapModal);
+    }
+
+    // 画像の「実際のピクセルサイズ」を読み込んでから表示する
+    const img = new Image();
+    img.src = imgSrc;
+    img.onload = () => {
+        const imgWidth = img.naturalWidth;
+        const imgHeight = img.naturalHeight;
+
+        let svgPolygons = '';
+        if (lotId === 1) { 
+            // 第1駐車場の場合、ポリゴン（多角形）を生成
+            PARKING_AREAS.forEach(area => {
+                const points = area.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
+                svgPolygons += `
+                    <polygon points="${points}" 
+                             class="area-polygon"
+                             onclick="handleAreaCheckIn(${lotId}, '${area.name}')" />
+                `;
+            });
+        }
+
+        mapModal.innerHTML = `
+            <div class="modal-content image-zoom-content" style="position: relative; overflow: hidden; background: #000; height: 100vh;">
+                <span class="close-zoom-modal" onclick="document.getElementById('interactiveMapModal').style.display='none'">&times;</span>
+                <div id="panzoom-container" style="position: relative; display: inline-block; margin: auto;">
+                    <img src="${imgSrc}" class="zoomed-image" style="max-height: 85vh; max-width: 95vw; display: block; pointer-events: none;">
+                    
+                    <svg viewBox="0 0 ${imgWidth} ${imgHeight}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                        ${svgPolygons}
+                    </svg>
+                </div>
+            </div>
+        `;
+        mapModal.style.display = 'flex';
+
+        // ズーム機能の起動
+        const elem = document.getElementById('panzoom-container');
+        const panzoom = Panzoom(elem, { maxScale: 5, contain: 'outside' });
+        elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
+    };
+}
+
+// 3. エリアがタップされた時の「自動割り当て」処理
+function handleAreaCheckIn(lotId, areaName) {
+    document.getElementById('interactiveMapModal').style.display = 'none';
+
+    // データベースから空いているマスを1つ探す
+    const lot = parkingData.find(l => l.id === lotId);
+    let targetSpaceId = null;
+
+    if (lot && lot.spaces) {
+        const availableSpace = lot.spaces.find(space => !space.isParked);
+        if (availableSpace) {
+            targetSpaceId = availableSpace.id;
+        }
+    }
+
+    if (!targetSpaceId) {
+        showNotification(`${areaName} は現在満車です。別のエリアを選択してください。`, 'error');
+        return;
+    }
+
+    // トースト通知を出す（※今回はテストとして画面表示のみ行います）
+    showUndoToast(`${areaName}を選択: 【${targetSpaceId}】に駐車しました`, () => {
+        console.log(`【取り消し】 ${targetSpaceId} の駐車をキャンセルしました`);
+    });
+}
+
+function showUndoToast(message, onUndo) {
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.innerHTML = `<span>✅ ${message}</span><button class="undo-btn">元に戻す</button>`;
+    document.body.appendChild(toast);
+
+    const timeoutId = setTimeout(() => { toast.remove(); }, 5000);
+
+    toast.querySelector('.undo-btn').onclick = () => {
+        clearTimeout(timeoutId);
+        toast.remove();
+        if (onUndo) onUndo();
+    };
+}

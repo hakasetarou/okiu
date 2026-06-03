@@ -608,3 +608,69 @@ body {
     cursor: pointer;
     font-size: 1em;
 }
+/* ================================================================= */
+/* A案：エリア選択 ＆ トースト通知 のデザイン */
+/* ================================================================= */
+
+/* --- 多角形（ポリゴン）エリア --- */
+.area-polygon {
+    fill: rgba(46, 204, 113, 0.4); /* 空きを示す緑色の半透明 */
+    stroke: #2ecc71;               /* 枠線 */
+    stroke-width: 3;
+    pointer-events: auto;          /* クリック可能にする */
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.area-polygon:hover {
+    fill: rgba(46, 204, 113, 0.7); /* マウスが乗ったら濃くする */
+}
+
+/* --- ズーム用モーダルの調整 --- */
+.modal-content.image-zoom-content {
+    max-width: 95vw;
+    max-height: 95vh;
+    padding: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.close-zoom-modal {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    color: white;
+    font-size: 40px;
+    z-index: 3001;
+    cursor: pointer;
+}
+
+/* --- Undo（元に戻す）トースト通知 --- */
+.toast-notification {
+    position: fixed;
+    bottom: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(44, 62, 80, 0.95);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 30px;
+    z-index: 9999;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    animation: slideUp 0.4s ease-out;
+}
+@keyframes slideUp {
+    0% { bottom: -50px; opacity: 0; }
+    100% { bottom: 120px; opacity: 1; }
+}
+.undo-btn {
+    color: #f1c40f;
+    background: none;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: underline;
+}
