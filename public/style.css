@@ -709,3 +709,86 @@ body {
     color: white;
 }
 .btn-number:hover { background-color: #27ae60; transform: translateY(-2px); }
+
+/* --- 個別の駐車マス（最初は隠しておく用） --- */
+.spot-polygon {
+    fill: rgba(46, 204, 113, 0.4);
+    stroke: #2ecc71;
+    stroke-width: 2;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.spot-polygon:hover {
+    fill: rgba(231, 76, 60, 0.7); /* マウスが乗ると赤っぽく（選択中）なる */
+}
+
+/* 表示・非表示を切り替えるための魔法のクラス */
+.hidden-spot {
+    display: none !important;
+}
+/* --- マップ用モーダルの画面固定設定（レイアウト崩れ防止） --- */
+#interactiveMapModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9); /* 背景を暗くする */
+    z-index: 3000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+/* ========================================================= */
+/* 全画面マップ専用のスタイル（古い.modalとは完全に切り離す） */
+/* ========================================================= */
+.map-fullscreen-modal {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.95); /* 真っ黒な背景 */
+    z-index: 9999;
+    display: none; /* 最初は隠す */
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+
+.map-zoom-content {
+    position: relative;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* ========================================================= */
+/* 全画面マップ専用のスタイル（古い画面のCSSとは完全に独立） */
+/* ========================================================= */
+.map-fullscreen-modal {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.95); /* 真っ黒な背景 */
+    z-index: 9999;
+    display: none; /* 最初は隠す */
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+}
+.map-zoom-content {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}

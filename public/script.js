@@ -288,21 +288,20 @@ async function renderParkingLots() {
         // =========================================================
         cardElement.style.cursor = 'default'; // カード全体は押せないようにする
         
-        // 以前の cardElement.onclick = ... は完全に消去します
-
         // ボタンを入れる箱（コンテナ）を作る
         const actionsContainer = document.createElement('div');
         actionsContainer.className = 'card-actions';
 
-        // 🗺️ マップから探すボタン（※機能2：今は準備中にしておきます）
+// 🗺️ マップから探すボタン
         const mapBtn = document.createElement('button');
         mapBtn.className = 'action-btn btn-map';
         mapBtn.innerHTML = '🗺️ マップから探す';
         mapBtn.onclick = (e) => {
-            e.stopPropagation(); // 他のクリック判定をブロック
+            e.stopPropagation(); // 他のクリックをブロック
             
-            // ★最後に「2」を実装するときにここを書き換えます！
-            alert(); 
+            // ★ 邪魔な if文（条件）をすべて消去しました！
+            // テスト用：どの駐車場のマップボタンを押しても、強制的に img5.jpg を開く！
+            openInteractiveMap(lot.id, 'images/img5.jpg'); 
         };
 
         // 🔢 番号から探すボタン（※機能3：以前のリスト方式）
@@ -836,100 +835,93 @@ const PARKING_AREAS = [
   { id: 5, name: "エリアA5", polygon: [[384,102], [99,474], [179,525], [474,167], [386,99]] }
 ];
 
-// 2. マップを開き、SVGで斜めのエリアを重ねて表示する
-function openInteractiveMap(lotId, imgSrc) {
-    let mapModal = document.getElementById('interactiveMapModal');
-    if (!mapModal) {
-        mapModal = document.createElement('div');
-        mapModal.id = 'interactiveMapModal';
-        mapModal.className = 'modal';
-        mapModal.style.zIndex = '3000';
-        document.body.appendChild(mapModal);
-    }
+// =================================================================================
+// ★★★ ドリルダウン型：マップ展開 ＆ 個別マスタップ機能 ★★★
+// =================================================================================
 
-    // 画像の「実際のピクセルサイズ」を読み込んでから表示する
+// 1. パーセントに変換済みのテストデータ（第5駐車場 右下）
+const LOT5_SPOTS = [
+  { id: 1, name: "1", polygon: [[82.09,22.35], [82.31,26.16], [88.44,29.96], [88.44,26.48]] },
+  { id: 2, name: "2", polygon: [[82.54,26.32], [82.31,29.65], [88.66,33.45], [88.44,29.96]] },
+  { id: 3, name: "3", polygon: [[82.09,29.65], [80.05,31.55], [85.94,35.2], [88.66,33.45]] }
+];
+
+// 2. マップを開く機能
+function openInteractiveMap(lotId, imgSrc) {
+    // 古いモーダルがあれば消す（バグ防止）
+    const oldModal = document.getElementById('interactiveMapModal');
+    if (oldModal) oldModal.remove();
+
+    // 新しいマップ画面を作成
+    const mapModal = document.createElement('div');
+    mapModal.id = 'interactiveMapModal';
+    mapModal.className = 'map-fullscreen-modal'; // ステップ2で作ったCSSを適用！
+    document.body.appendChild(mapModal);
+
     const img = new Image();
     img.src = imgSrc;
     img.onload = () => {
-        const imgWidth = img.naturalWidth;
-        const imgHeight = img.naturalHeight;
+        // 大きなタップエリアの枠を自動計算
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        LOT5_SPOTS.forEach(spot => spot.polygon.forEach(p => {
+            if(p[0] < minX) minX = p[0]; if(p[1] < minY) minY = p[1];
+            if(p[0] > maxX) maxX = p[0]; if(p[1] > maxY) maxY = p[1];
+        }));
+        minX -= 2; minY -= 2; maxX += 2; maxY += 2; 
+        
+        if (minX === Infinity) { minX = 0; minY = 0; maxX = 10; maxY = 10; }
+        const autoAreaPoints = `${minX},${minY} ${maxX},${minY} ${maxX},${maxY} ${minX},${maxY}`;
 
-        let svgPolygons = '';
-        if (lotId === 1) { 
-            // 第1駐車場の場合、ポリゴン（多角形）を生成
-            PARKING_AREAS.forEach(area => {
-                const points = area.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
-                svgPolygons += `
-                    <polygon points="${points}" 
-                             class="area-polygon"
-                             onclick="handleAreaCheckIn(${lotId}, '${area.name}')" />
-                `;
-            });
-        }
+        // 個別マスを作る（最初は display: none で隠す）
+        let spotsSvg = LOT5_SPOTS.map(spot => {
+            const pts = spot.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
+            return `<polygon points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn(${lotId}, '${spot.name}')" style="display: none; fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.3; cursor: pointer;" />`;
+        }).join('');
 
+        // HTMLを注入 (viewBox="0 0 100 100" によりパーセント座標が完璧に重なる)
         mapModal.innerHTML = `
-            <div class="modal-content image-zoom-content" style="position: relative; overflow: hidden; background: #000; height: 100vh;">
-                <span class="close-zoom-modal" onclick="document.getElementById('interactiveMapModal').style.display='none'">&times;</span>
-                <div id="panzoom-container" style="position: relative; display: inline-block; margin: auto;">
-                    <img src="${imgSrc}" class="zoomed-image" style="max-height: 85vh; max-width: 95vw; display: block; pointer-events: none;">
-                    
-                    <svg viewBox="0 0 ${imgWidth} ${imgHeight}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
-                        ${svgPolygons}
+            <div class="map-zoom-content">
+                <span onclick="document.getElementById('interactiveMapModal').style.display='none'" style="position: absolute; top: 20px; right: 30px; font-size: 50px; color: white; cursor: pointer; z-index: 10000; line-height: 1;">&times;</span>
+                <div id="panzoom-container" style="position: relative; display: inline-block;">
+                    <img src="${imgSrc}" style="max-height: 90vh; max-width: 95vw; display: block; pointer-events: none;">
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                        <polygon points="${autoAreaPoints}" id="main-area" style="fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.5; pointer-events: auto; cursor: pointer;" />
+                        ${spotsSvg}
                     </svg>
                 </div>
             </div>
         `;
         mapModal.style.display = 'flex';
 
-        // ズーム機能の起動
-        const elem = document.getElementById('panzoom-container');
-        const panzoom = Panzoom(elem, { maxScale: 5, contain: 'outside' });
-        elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
+        // 0.1秒待ってからズーム機能を起動（画像消失バグ防止）
+        setTimeout(() => {
+            const elem = document.getElementById('panzoom-container');
+            const mainArea = document.getElementById('main-area');
+
+            try {
+                const panzoom = Panzoom(elem, { maxScale: 5 });
+                elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
+
+                // 大きなエリアをタップした時
+                mainArea.onclick = (e) => {
+                    mainArea.style.display = 'none'; // エリアを消す
+                    document.querySelectorAll('.spot-polygon').forEach(el => {
+                        el.style.display = 'block'; // 個別マスを表示
+                        el.style.pointerEvents = 'auto';
+                    });
+                    panzoom.zoomToPoint(2.5, { clientX: e.clientX, clientY: e.clientY }, { animate: true }); // ズームイン
+                };
+            } catch (err) {
+                console.error("Panzoomエラー:", err);
+            }
+        }, 100); 
     };
 }
 
-// 3. エリアがタップされた時の「自動割り当て」処理
-function handleAreaCheckIn(lotId, areaName) {
-    // マップを閉じる
+// 3. 個別マスをタップした時の処理
+function handleSpotCheckIn(lotId, spotName) {
     document.getElementById('interactiveMapModal').style.display = 'none';
-
-    const lot = parkingData.find(l => l.id === lotId);
-    let targetSpaceId = null;
-
-    // もし詳細なデータがあればそこから探す
-    if (lot && lot.spaces) {
-        const availableSpace = lot.spaces.find(space => !space.isParked);
-        if (availableSpace) {
-            targetSpaceId = availableSpace.id;
-        }
-    } else {
-        // ★★★ テスト用の追加ロジック ★★★
-        // データがまだない場合は、1〜530のランダムな数字を「仮の駐車場所」として割り当てる！
-        targetSpaceId = Math.floor(Math.random() * 530) + 1;
-    }
-
-    if (!targetSpaceId) {
-        alert(`${areaName} は現在満車です。別のエリアを選択してください。`);
-        return;
-    }
-
-    // トースト通知を出す
-    showUndoToast(`${areaName}を選択: 【${targetSpaceId}番】に駐車しました`, () => {
-        console.log(`【取り消し】 ${targetSpaceId}番 の駐車をキャンセルしました`);
+    showUndoToast(`【${spotName}番】に駐車しました`, () => {
+        console.log(`【取り消し】 ${spotName}番 の駐車をキャンセルしました`);
     });
-}
-
-function showUndoToast(message, onUndo) {
-    const toast = document.createElement('div');
-    toast.className = 'toast-notification';
-    toast.innerHTML = `<span>✅ ${message}</span><button class="undo-btn">元に戻す</button>`;
-    document.body.appendChild(toast);
-
-    const timeoutId = setTimeout(() => { toast.remove(); }, 5000);
-
-    toast.querySelector('.undo-btn').onclick = () => {
-        clearTimeout(timeoutId);
-        toast.remove();
-        if (onUndo) onUndo();
-    };
 }
