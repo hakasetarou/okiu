@@ -828,7 +828,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 1. Claudeで作った多角形の座標データ
 const PARKING_AREAS = [
-  { id: 1, name: "エリアA", polygon: [[480,200], [368,335], [573,521], [708,372], [481,199]] },
+  { id: 1, name: "エリアA", polygon: [[480,200], [368,335], [573,521], [708,372], [481,199]]},
   { id: 2, name: "エリアA2", polygon: [[347,362], [195,527], [395,785], [572,542], [347,356]] },
   { id: 3, name: "エリアA3", polygon: [[445,720], [771,264], [897,407], [561,805], [446,720]] },
   { id: 4, name: "エリアA4", polygon: [[728,212], [477,2], [404,87], [679,307], [732,206]] },
@@ -839,61 +839,62 @@ const PARKING_AREAS = [
 // ★★★ ドリルダウン型：マップ展開 ＆ 個別マスタップ機能 ★★★
 // =================================================================================
 
-// 1. パーセントに変換済みのテストデータ（第5駐車場 右下）
+// 1. あなたが導き出した「完璧な精度の座標（#2）」
 const LOT5_SPOTS = [
-  { id: 1, name: "1", polygon: [[82.09,22.35], [82.31,26.16], [88.44,29.96], [88.44,26.48]] },
-  { id: 2, name: "2", polygon: [[82.54,26.32], [82.31,29.65], [88.66,33.45], [88.44,29.96]] },
-  { id: 3, name: "3", polygon: [[82.09,29.65], [80.05,31.55], [85.94,35.2], [88.66,33.45]] }
+  { id: 1, name: "1", polygon:[[81.799,35.439], [82.597,41.394], [88.383,47.35], [88.383,41.835]]  }
 ];
 
-// 2. マップを開く機能
+
+// 2. マップを開き、個別マスを生成する（★真・究極の解決策：アスペクト比完全ロック版）
 function openInteractiveMap(lotId, imgSrc) {
-    // 古いモーダルがあれば消す（バグ防止）
     const oldModal = document.getElementById('interactiveMapModal');
     if (oldModal) oldModal.remove();
 
-    // 新しいマップ画面を作成
     const mapModal = document.createElement('div');
     mapModal.id = 'interactiveMapModal';
-    mapModal.className = 'map-fullscreen-modal'; // ステップ2で作ったCSSを適用！
+    mapModal.className = 'map-fullscreen-modal'; 
     document.body.appendChild(mapModal);
 
     const img = new Image();
     img.src = imgSrc;
     img.onload = () => {
-        // 大きなタップエリアの枠を自動計算
+        // 画像の本来の解像度を取得
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         LOT5_SPOTS.forEach(spot => spot.polygon.forEach(p => {
             if(p[0] < minX) minX = p[0]; if(p[1] < minY) minY = p[1];
             if(p[0] > maxX) maxX = p[0]; if(p[1] > maxY) maxY = p[1];
         }));
-        minX -= 2; minY -= 2; maxX += 2; maxY += 2; 
         
-        if (minX === Infinity) { minX = 0; minY = 0; maxX = 10; maxY = 10; }
+        minX -= 2; minY -= 2; maxX += 2; maxY += 2; 
+        if (minX === Infinity) { minX = 0; minY = 0; maxX = 100; maxY = 100; }
         const autoAreaPoints = `${minX},${minY} ${maxX},${minY} ${maxX},${maxY} ${minX},${maxY}`;
 
-        // 個別マスを作る（最初は display: none で隠す）
         let spotsSvg = LOT5_SPOTS.map(spot => {
             const pts = spot.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
-            return `<polygon points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn(${lotId}, '${spot.name}')" style="display: none; fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.3; cursor: pointer;" />`;
+            // 個別マスは最初から表示しておく
+            return `<polygon points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn(${lotId}, '${spot.name}')" style="display: block; fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.3; cursor: pointer;" />`;
         }).join('');
 
-        // HTMLを注入 (viewBox="0 0 100 100" によりパーセント座標が完璧に重なる)
         mapModal.innerHTML = `
-            <div class="map-zoom-content">
+            <div class="map-zoom-content" style="position: relative; overflow: hidden; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95);">
                 <span onclick="document.getElementById('interactiveMapModal').style.display='none'" style="position: absolute; top: 20px; right: 30px; font-size: 50px; color: white; cursor: pointer; z-index: 10000; line-height: 1;">&times;</span>
-                <div id="panzoom-container" style="position: relative; display: inline-block;">
-                    <img src="${imgSrc}" style="max-height: 90vh; max-width: 95vw; display: block; pointer-events: none;">
-                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
-                        <polygon points="${autoAreaPoints}" id="main-area" style="fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.5; pointer-events: auto; cursor: pointer;" />
+                
+                <div id="panzoom-container" style="position: relative; width: 100%; max-width: 95vw; max-height: 85vh; aspect-ratio: ${w} / ${h}; margin: 0 auto;">
+                    
+                    <img src="${imgSrc}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; pointer-events: none; margin: 0; padding: 0; border: none;">
+                    
+                    <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; margin: 0; padding: 0;">
                         ${spotsSvg}
+                        <polygon points="${autoAreaPoints}" id="main-area" style="fill: transparent; stroke: none; pointer-events: auto; cursor: pointer;" />
                     </svg>
                 </div>
             </div>
         `;
         mapModal.style.display = 'flex';
 
-        // 0.1秒待ってからズーム機能を起動（画像消失バグ防止）
         setTimeout(() => {
             const elem = document.getElementById('panzoom-container');
             const mainArea = document.getElementById('main-area');
@@ -902,14 +903,12 @@ function openInteractiveMap(lotId, imgSrc) {
                 const panzoom = Panzoom(elem, { maxScale: 5 });
                 elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
 
-                // 大きなエリアをタップした時
                 mainArea.onclick = (e) => {
-                    mainArea.style.display = 'none'; // エリアを消す
+                    mainArea.style.display = 'none'; 
                     document.querySelectorAll('.spot-polygon').forEach(el => {
-                        el.style.display = 'block'; // 個別マスを表示
                         el.style.pointerEvents = 'auto';
                     });
-                    panzoom.zoomToPoint(2.5, { clientX: e.clientX, clientY: e.clientY }, { animate: true }); // ズームイン
+                    panzoom.zoomToPoint(2.5, { clientX: e.clientX, clientY: e.clientY }, { animate: true }); 
                 };
             } catch (err) {
                 console.error("Panzoomエラー:", err);
