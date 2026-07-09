@@ -841,11 +841,25 @@ const PARKING_AREAS = [
 
 // 1. あなたが導き出した「完璧な精度の座標（#2）」
 const LOT5_SPOTS = [
-  { id: 1, name: "1", polygon:[[81.799,35.439], [82.597,41.394], [88.383,47.35], [88.383,41.835]]  }
+  { id: 1, name: "1", polygon: [[81.998,35.292], [82.597,41.247], [88.582,47.423], [88.383,41.688]] },
+  { id: 2, name: "2", polygon: [[82.397,41.468], [82.397,46.761], [88.582,53.158], [88.383,47.423]] },
+  { id: 3, name: "3", polygon: [[82.597,46.982], [79.804,49.85], [85.989,56.026], [88.582,52.938]] },
+  { id: 4, name: "4", polygon: [[80.003,49.85], [77.609,52.496], [83.794,58.672], [85.989,56.026]] },
+  { id: 5, name: "5", polygon: [[77.609,52.643], [75.016,55.731], [81.001,61.687], [83.794,58.819]] },
+  { id: 6, name: "6", polygon: [[75.215,55.731], [72.821,58.599], [78.407,64.554], [81.001,61.687]] },
+  { id: 7, name: "7", polygon: [[72.621,58.599], [70.227,61.907], [75.814,67.422], [78.407,64.554]] },
+  { id: 8, name: "8", polygon: [[70.227,61.687], [67.634,64.775], [73.22,70.51], [75.814,67.422]] },
+  { id: 9, name: "9", polygon: [[67.634,64.775], [65.24,67.642], [71.025,73.157], [73.22,70.51]] },
+  { id: 10, name: "10", polygon: [[65.439,67.642], [63.245,70.289], [68.631,75.804], [70.826,73.157]] },
+  { id: 11, name: "11", polygon: [[63.045,70.289], [60.651,73.377], [66.038,78.892], [68.432,76.024]] },
+  { id: 12, name: "12", polygon: [[60.451,73.377], [58.057,76.465], [63.444,81.98], [65.838,78.892]] },
+  { id: 13, name: "13", polygon: [[58.057,76.465], [55.663,79.553], [60.85,84.847], [63.245,81.759]] },
+  { id: 14, name: "14", polygon: [[55.464,79.553], [53.07,82.421], [59.055,88.817], [61.05,84.847]] },
+  { id: 15, name: "15", polygon: [[53.07,82.421], [51.673,86.171], [57.658,92.126], [59.055,88.597]] }
 ];
 
 
-// 2. マップを開き、個別マスを生成する（★真・究極の解決策：アスペクト比完全ロック版）
+// 2. マップを開き、個別マスを生成する（★横長バグ解消 ＆ 職人モード用 赤い忍者ボックス版）
 function openInteractiveMap(lotId, imgSrc) {
     const oldModal = document.getElementById('interactiveMapModal');
     if (oldModal) oldModal.remove();
@@ -858,10 +872,6 @@ function openInteractiveMap(lotId, imgSrc) {
     const img = new Image();
     img.src = imgSrc;
     img.onload = () => {
-        // 画像の本来の解像度を取得
-        const w = img.naturalWidth;
-        const h = img.naturalHeight;
-
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
         LOT5_SPOTS.forEach(spot => spot.polygon.forEach(p => {
             if(p[0] < minX) minX = p[0]; if(p[1] < minY) minY = p[1];
@@ -874,7 +884,6 @@ function openInteractiveMap(lotId, imgSrc) {
 
         let spotsSvg = LOT5_SPOTS.map(spot => {
             const pts = spot.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
-            // 個別マスは最初から表示しておく
             return `<polygon points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn(${lotId}, '${spot.name}')" style="display: block; fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.3; cursor: pointer;" />`;
         }).join('');
 
@@ -882,13 +891,14 @@ function openInteractiveMap(lotId, imgSrc) {
             <div class="map-zoom-content" style="position: relative; overflow: hidden; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95);">
                 <span onclick="document.getElementById('interactiveMapModal').style.display='none'" style="position: absolute; top: 20px; right: 30px; font-size: 50px; color: white; cursor: pointer; z-index: 10000; line-height: 1;">&times;</span>
                 
-                <div id="panzoom-container" style="position: relative; width: 100%; max-width: 95vw; max-height: 85vh; aspect-ratio: ${w} / ${h}; margin: 0 auto;">
+                <div id="panzoom-container" style="position: relative; display: inline-block; line-height: 0; font-size: 0; margin: 0 auto;">
                     
-                    <img src="${imgSrc}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; pointer-events: none; margin: 0; padding: 0; border: none;">
+                    <img src="${imgSrc}" style="display: block; max-width: 95vw; max-height: 85vh; width: auto; height: auto; pointer-events: none; margin: 0; padding: 0; border: none;">
                     
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; margin: 0; padding: 0;">
                         ${spotsSvg}
-                        <polygon points="${autoAreaPoints}" id="main-area" style="fill: transparent; stroke: none; pointer-events: auto; cursor: pointer;" />
+                        
+                     <polygon points="${autoAreaPoints}" id="main-area" style="fill: transparent; stroke: none; pointer-events: auto; cursor: pointer;" />
                     </svg>
                 </div>
             </div>
