@@ -292,16 +292,16 @@ async function renderParkingLots() {
         const actionsContainer = document.createElement('div');
         actionsContainer.className = 'card-actions';
 
-// 🗺️ マップから探すボタン
-        const mapBtn = document.createElement('button');
+const mapBtn = document.createElement('button');
         mapBtn.className = 'action-btn btn-map';
         mapBtn.innerHTML = '🗺️ マップから探す';
         mapBtn.onclick = (e) => {
-            e.stopPropagation(); // 他のクリックをブロック
+            e.stopPropagation(); 
             
-            // ★ 邪魔な if文（条件）をすべて消去しました！
-            // テスト用：どの駐車場のマップボタンを押しても、強制的に img5.jpg を開く！
-            openInteractiveMap(lot.id, 'images/img5.jpg'); 
+            // データベースから取得した画像URL（lot.imageUrl）を使用する
+            // もし画像URLが設定されていない場合の保険としてフォールバックも用意します
+            const imgSrc = lot.imageUrl ? lot.imageUrl : `images/img${lot.id}.jpg`;
+            openInteractiveMap(lot.id, imgSrc); 
         };
 
         // 🔢 番号から探すボタン（※機能3：以前のリスト方式）
@@ -839,9 +839,12 @@ const PARKING_AREAS = [
 // ★★★ ドリルダウン型：マップ展開 ＆ 個別マスタップ機能 ★★★
 // =================================================================================
 
-// 1. あなたが導き出した「完璧な精度の座標（#2）」
-const LOT5_SPOTS = [
-  { id: 1, name: "1", polygon: [[81.998,35.292], [82.597,41.247], [88.582,47.423], [88.383,41.688]] },
+// 1. 各駐車場の座標データを一元管理するオブジェクト
+const PARKING_SPOTS_DATA = {
+    // 修正ポイント：キーを数値の 5 ではなく、文字列の "lot-5" に変更します！
+    "lot-5": [
+        // 取得した第5駐車場の1番マスの完璧な座標
+{ id: 1, name: "1", polygon: [[81.998,35.292], [82.597,41.247], [88.582,47.423], [88.383,41.688]] },
   { id: 2, name: "2", polygon: [[82.397,41.468], [82.397,46.761], [88.582,53.158], [88.383,47.423]] },
   { id: 3, name: "3", polygon: [[82.597,46.982], [79.804,49.85], [85.989,56.026], [88.582,52.938]] },
   { id: 4, name: "4", polygon: [[80.003,49.85], [77.609,52.496], [83.794,58.672], [85.989,56.026]] },
@@ -855,11 +858,63 @@ const LOT5_SPOTS = [
   { id: 12, name: "12", polygon: [[60.451,73.377], [58.057,76.465], [63.444,81.98], [65.838,78.892]] },
   { id: 13, name: "13", polygon: [[58.057,76.465], [55.663,79.553], [60.85,84.847], [63.245,81.759]] },
   { id: 14, name: "14", polygon: [[55.464,79.553], [53.07,82.421], [59.055,88.817], [61.05,84.847]] },
-  { id: 15, name: "15", polygon: [[53.07,82.421], [51.673,86.171], [57.658,92.126], [59.055,88.597]] }
-];
+  { id: 15, name: "15", polygon: [[53.07,82.421], [51.673,86.171], [57.658,92.126], [59.055,88.597]]},
+  { id: 16, name: "16", polygon: [[51.811,86.206], [49.616,82.322], [45.335,90.089], [48.299,92.759]] },
+  { id: 17, name: "17", polygon: [[49.616,82.322], [47.201,79.045], [41.164,84.142], [43.469,87.54]] },
+  { id: 18, name: "18", polygon: [[47.201,79.086], [44.896,75.809], [38.749,81.028], [41.164,84.061]] },
+  { id: 19, name: "19", polygon: [[44.896,76.052], [42.7,72.654], [36.443,77.751], [38.858,81.149]] },
+  { id: 20, name: "20", polygon: [[42.7,72.775], [40.285,69.498], [34.138,74.595], [36.553,77.872]] },
+  { id: 21, name: "21", polygon: [[40.176,69.498], [37.98,66.222], [31.833,71.319], [34.248,74.595]] },
+  { id: 22, name: "22", polygon: [[37.87,66.464], [33.699,60.032], [29.967,61.974], [34.687,68.892]] },
+  { id: 23, name: "23", polygon: [[29.967,61.974], [26.454,64.037], [31.723,71.561], [34.797,68.77]] },
+  { id: 24, name: "24", polygon: [[22.942,59.264], [23.82,54.935], [17.124,50.445], [14.709,53.479]] },
+  { id: 25, name: "25", polygon: [[24.479,53.924], [26.894,50.769], [21.076,45.065], [18.661,48.341]] },
+  { id: 26, name: "26", polygon: [[26.674,50.769], [29.308,47.613], [23.381,41.788], [21.076,45.186]] },
+  { id: 27, name: "27", polygon: [[29.199,47.492], [31.614,44.337], [25.686,38.633], [23.491,41.909]] },
+  { id: 28, name: "28", polygon: [[31.614,44.296], [33.919,41.262], [28.101,35.437], [25.686,38.714]] },
+  { id: 29, name: "29", polygon: [[33.919,41.019], [36.334,38.107], [30.296,32.16], [28.211,35.316]] },
+  { id: 30, name: "30", polygon: [[36.334,37.985], [38.749,34.83], [32.711,29.005], [30.406,32.282]] },
+  { id: 31, name: "31", polygon: [[38.749,34.83], [41.164,31.796], [35.126,25.85], [32.711,29.005]] },
+  { id: 32, name: "32", polygon: [[41.054,31.675], [43.578,28.641], [37.431,22.573], [35.126,25.728]] },
+  { id: 33, name: "33", polygon: [[43.578,28.519], [45.993,25.485], [39.846,19.417], [37.431,22.816]] },
+  { id: 34, name: "34", polygon: [[45.884,25.485], [48.299,22.209], [42.151,16.141], [39.737,19.417]] },
+  { id: 35, name: "35", polygon: [[45.884,11.044], [51.043,14.684], [55.434,7.039], [51.482,3.519]] },
+  { id: 36, name: "36", polygon: [[51.043,14.927], [53.787,17.476], [58.397,9.709], [55.324,7.16]] },
+  { id: 37, name: "37", polygon: [[53.787,17.476], [56.861,20.267], [61.251,12.257], [58.397,9.709]] },
+  { id: 38, name: "38", polygon: [[56.641,20.267], [59.495,22.937], [64.105,14.927], [61.251,12.379]] },
+  { id: 39, name: "39", polygon: [[59.495,22.937], [62.349,25.728], [66.85,17.597], [63.996,14.927]] },
+  { id: 40, name: "40", polygon: [[62.349,25.728], [65.203,28.641], [69.813,20.267], [66.85,17.718]] },
+  { id: 41, name: "41", polygon: [[65.313,28.519], [67.838,31.432], [72.777,23.058], [69.813,20.267]] },
+  { id: 42, name: "42", polygon: [[53.897,27.791], [48.847,34.345], [51.482,37.015], [56.641,30.583]] },
+  { id: 43, name: "43", polygon: [[56.641,30.704], [51.592,37.015], [54.446,39.806], [59.495,33.374]] },
+  { id: 44, name: "44", polygon: [[54.336,39.927], [57.08,42.476], [62.239,36.044], [59.385,33.252]] },
+  { id: 45, name: "45", polygon: [[57.08,42.476], [59.934,45.267], [64.984,38.835], [62.239,35.922]] },
+  { id: 46, name: "46", polygon: [[64.984,38.835], [59.824,45.267], [62.678,47.937], [67.728,41.626]] },
+  { id: 47, name: "47", polygon: [[67.728,41.626], [62.569,47.816], [65.423,50.607], [70.472,44.296]] },
+  { id: 48, name: "48", polygon: [[70.472,44.296], [65.532,50.485], [68.277,53.155], [73.326,46.966]] },
+  { id: 49, name: "49", polygon: [[68.277,53.398], [63.117,59.83], [60.263,57.039], [65.423,50.728]] },
+  { id: 50, name: "50", polygon: [[65.423,50.728], [60.483,57.039], [57.629,54.369], [62.678,47.816]] },
+  { id: 51, name: "51", polygon: [[62.678,47.816], [57.629,54.369], [54.775,51.699], [59.934,45.146]] },
+  { id: 52, name: "52", polygon: [[59.934,45.146], [54.885,51.456], [52.031,48.908], [56.97,42.476]] },
+  { id: 53, name: "53", polygon: [[56.97,42.476], [52.031,48.786], [49.177,46.238], [54.446,39.806]] },
+  { id: 54, name: "54", polygon: [[54.446,39.806], [49.286,46.117], [46.432,43.447], [51.592,36.893]] },
+  { id: 55, name: "55", polygon: [[51.372,37.136], [46.542,43.325], [43.688,40.655], [49.067,34.223]] },
+  { id: 56, name: "56", polygon: [[53.568,71.966], [58.507,65.534], [55.763,62.743], [50.823,69.175]] },
+  { id: 57, name: "57", polygon: [[50.714,69.296], [55.653,62.864], [53.019,60.073], [47.969,66.383]] },
+  { id: 58, name: "58", polygon: [[47.969,66.383], [52.909,60.073], [50.274,57.524], [45.225,63.592]] },
+  { id: 59, name: "59", polygon: [[45.225,63.592], [50.274,57.524], [47.42,54.733], [42.481,61.044]] },
+  { id: 60, name: "60", polygon: [[42.481,61.044], [47.42,54.612], [44.786,51.82], [39.737,58.252]] },
+  { id: 61, name: "61", polygon: [[39.737,58.252], [44.676,51.942], [41.932,49.272], [36.883,55.461]] },
+  { id: 62, name: "62", polygon: [[36.883,55.461], [41.932,49.272], [39.188,46.602], [34.029,52.791]] }
+    ],
+    // 将来、第3駐車場を追加する場合は以下のようにします
+    "lot-3": [
+        // 第3駐車場の座標データ...
+    ]
+};
 
 
-// 2. マップを開き、個別マスを生成する（★横長バグ解消 ＆ 職人モード用 赤い忍者ボックス版）
+// 2. マップを開き、個別マスを生成する（★本番用：堅牢なデータ連携 ＆ 透明エリア版）
 function openInteractiveMap(lotId, imgSrc) {
     const oldModal = document.getElementById('interactiveMapModal');
     if (oldModal) oldModal.remove();
@@ -872,8 +927,19 @@ function openInteractiveMap(lotId, imgSrc) {
     const img = new Image();
     img.src = imgSrc;
     img.onload = () => {
+        // ★ アーキテクチャ改善：型安全なデータ取得
+        // PostgreSQLから渡される lotId が数値でも文字列でも確実にマッチするように吸収し、
+        // 開発者用コンソールにデバッグログを出力します。
+        console.log(`[Debug] 展開リクエスト受信 - 駐車場ID: ${lotId}`);
+        const currentSpots = PARKING_SPOTS_DATA[String(lotId)] || PARKING_SPOTS_DATA[Number(lotId)] || [];
+
+        if (currentSpots.length === 0) {
+            console.warn(`[Warn] ID: ${lotId} の座標データが PARKING_SPOTS_DATA に定義されていません。`);
+        }
+
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        LOT5_SPOTS.forEach(spot => spot.polygon.forEach(p => {
+        
+        currentSpots.forEach(spot => spot.polygon.forEach(p => {
             if(p[0] < minX) minX = p[0]; if(p[1] < minY) minY = p[1];
             if(p[0] > maxX) maxX = p[0]; if(p[1] > maxY) maxY = p[1];
         }));
@@ -882,7 +948,7 @@ function openInteractiveMap(lotId, imgSrc) {
         if (minX === Infinity) { minX = 0; minY = 0; maxX = 100; maxY = 100; }
         const autoAreaPoints = `${minX},${minY} ${maxX},${minY} ${maxX},${maxY} ${minX},${maxY}`;
 
-        let spotsSvg = LOT5_SPOTS.map(spot => {
+        let spotsSvg = currentSpots.map(spot => {
             const pts = spot.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
             return `<polygon points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn(${lotId}, '${spot.name}')" style="display: block; fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.3; cursor: pointer;" />`;
         }).join('');
@@ -892,13 +958,13 @@ function openInteractiveMap(lotId, imgSrc) {
                 <span onclick="document.getElementById('interactiveMapModal').style.display='none'" style="position: absolute; top: 20px; right: 30px; font-size: 50px; color: white; cursor: pointer; z-index: 10000; line-height: 1;">&times;</span>
                 
                 <div id="panzoom-container" style="position: relative; display: inline-block; line-height: 0; font-size: 0; margin: 0 auto;">
-                    
                     <img src="${imgSrc}" style="display: block; max-width: 95vw; max-height: 85vh; width: auto; height: auto; pointer-events: none; margin: 0; padding: 0; border: none;">
                     
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; margin: 0; padding: 0;">
                         ${spotsSvg}
                         
-                     <polygon points="${autoAreaPoints}" id="main-area" style="fill: transparent; stroke: none; pointer-events: auto; cursor: pointer;" />
+                        <!-- ★ 修正ポイント：職人モードを終了し、完全に透明な本番用ダミーエリアに戻しました -->
+                        <polygon points="${autoAreaPoints}" id="main-area" style="fill: transparent; stroke: none; pointer-events: auto; cursor: pointer;" />
                     </svg>
                 </div>
             </div>
@@ -926,7 +992,6 @@ function openInteractiveMap(lotId, imgSrc) {
         }, 100); 
     };
 }
-
 // 3. 個別マスをタップした時の処理
 function handleSpotCheckIn(lotId, spotName) {
     document.getElementById('interactiveMapModal').style.display = 'none';
