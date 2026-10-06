@@ -211,3 +211,45 @@ test('old map clients cannot register using the previous numbering', async () =>
     assert.equal((await pool.query('SELECT * FROM parking_sessions')).rowCount, 0);
     assert.equal((await checkin('test-a', 22)).status, 200);
 });
+
+test('removing lot 6 leaves lots 1 to 5 and 7, adjusts totals, and rejects lot 6 registration', async () => {
+    await pool.query(`
+        INSERT INTO parking_lots(id,name,capacity,image_url) VALUES
+            ('lot-1','Lot 1',2,'/images/img1.jpg'), ('lot-2','Lot 2',2,'/images/img2.jpg'),
+            ('lot-3','Lot 3',2,'/images/img3.jpg'), ('lot-4','Lot 4',2,'/images/img4.jpg'),
+            ('lot-6','Lot 6',50,'/images/img6.jpg'), ('lot-7','Lot 7',2,'/images/img7.jpg');
+        INSERT INTO parking_spaces(lot_id,spot_number,status) VALUES
+            ('lot-6',1,'available'), ('lot-7',1,'available');
+    `);
+    try {
+        await pool.query(fs.readFileSync('migrations/005-remove-parking-lot6.sql', 'utf8'));
+        const listing = await request('/parking-data');
+        assert.deepEqual(listing.body.map(lot => lot.id), [1, 2, 3, 4, 5, 7]);
+        assert.equal(listing.body.reduce((sum, lot) => sum + lot.capacity, 0), 71);
+        assert.equal(listing.body.reduce((sum, lot) => sum + lot.available, 0), 71);
+        const status = await request('/parking/status');
+        assert.ok(status.body.every(space => space.lot_id !== '6'));
+        assert.equal((await request('/parking/checkin', { userId: 'test-a', lotId: 6, spaceId: 1, endTime: '15:30' })).status, 400);
+        const seventh = await request('/parking/checkin', { userId: 'test-a', lotId: 7, spaceId: 1, endTime: '15:30' });
+        assert.equal(seventh.status, 200);
+        assert.equal(seventh.body.lot_id, '7');
+    } finally {
+        await pool.query("DELETE FROM parking_lots WHERE id <> 'lot-5'");
+    }
+});
+
+test('lot 6 removal stops without discarding active parking', async () => {
+    await pool.query("INSERT INTO parking_lots(id,name,capacity) VALUES ('lot-6','Lot 6',50)");
+    await request('/parking/checkin', { userId: 'test-a', lotId: 6, spaceId: 1, endTime: '15:30' });
+    const client = await pool.connect();
+    try {
+        await assert.rejects(client.query(fs.readFileSync('migrations/005-remove-parking-lot6.sql', 'utf8')));
+        await client.query('ROLLBACK');
+        assert.equal((await pool.query("SELECT * FROM parking_lots WHERE id='lot-6'")).rowCount, 1);
+        assert.equal((await pool.query("SELECT * FROM parking_sessions WHERE lot_id='lot-6'")).rowCount, 1);
+    } finally {
+        await client.query('ROLLBACK');
+        client.release();
+        await pool.query("DELETE FROM parking_lots WHERE id='lot-6'");
+    }
+});
