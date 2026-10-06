@@ -1,11 +1,17 @@
 // =================================================================================
 // グローバル定数・変数
 // =================================================================================
-const API_BASE_URL = 'http://localhost:3000';
+// ページを開いたサーバーへ接続する（別端末からも同じURLで利用できる）。
+const API_BASE_URL = '';
+// 第5駐車場の旧22番を除いた番号体系。
+const PARKING_LAYOUT_VERSION = 2;
 
 let parkingData = [];
 let currentUser = null;
 let myParkingInfo = null;
+let latestMapStatus = null;
+let mapRequestId = 0;
+let parkingOperationPending = false;
 
 
 // =================================================================================
@@ -31,7 +37,11 @@ async function apiRequest(url, options = {}) {
         return resJson;
     } catch (error) {
         console.error('API Request Error:', error);
-        showError(error.message);
+        if (mainSystem.classList.contains('hidden')) {
+            showError(error.message);
+        } else {
+            showNotification(error.message, 'error');
+        }
         throw error;
     }
 }
@@ -107,7 +117,7 @@ async function handleLogin(event) {
     const password = document.getElementById('loginPassword').value;
 
     if (!studentId || !password) return showError('学籍番号とパスワードを入力してください。');
-    
+
     try {
         const data = await apiRequest('/api/login', {
             method: 'POST',
@@ -153,7 +163,7 @@ async function processLogout() {
     // ※もしセッション管理などをしていないなら、ここは省略しても画面切り替えだけで動きますが、念のため残します
     try {
         /* 必要に応じてAPIリクエストを送る */
-        // await apiRequest('/api/logout', { method: 'POST' }); 
+        // await apiRequest('/api/logout', { method: 'POST' });
     } catch (error) {
         console.error(error);
     }
@@ -164,7 +174,7 @@ async function processLogout() {
 
     // 画面を切り替える
     showLoginScreen();
-    
+
     // モーダルを閉じる
     closeLogoutModal();
 }
@@ -174,12 +184,17 @@ async function processLogout() {
 // 画面表示の制御
 // =================================================================================
 function showLoginScreen() {
+    mapRequestId++;
+    latestMapStatus = null;
+    const mapModal = document.getElementById('interactiveMapModal');
+    if (mapModal) mapModal.remove();
     loginScreen.classList.remove('hidden');
     mainSystem.classList.add('hidden');
     closeDetailModal();     // 詳細モーダルを閉じる
     closeEndTimeModal();    // 時刻入力モーダルを閉じる
     closeImageZoomModal();  // 画像拡大モーダルを閉じる
     closeLogoutModal();
+    closeCheckoutModal();
 }
 
 function showMainSystem() {
@@ -196,7 +211,7 @@ function showMainSystem() {
 async function initializeSystem() {
     if (!currentUser) return;
     document.getElementById('userInfo').textContent = `ようこそ、${currentUser.name} さん`;
-    
+
     try {
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
@@ -210,10 +225,10 @@ async function initializeSystem() {
 // =================================================================================
 async function renderParkingLots() {
     const container = document.getElementById('parkingLots');
-    const template = document.getElementById('parking-card-template'); 
-    
+    const template = document.getElementById('parking-card-template');
+
     if(!container || !template) return;
-    
+
     container.innerHTML = ''; // 画面クリア
 
     // --- ★★★ ここから追加：A案（満車を沈める）のロジック ★★★ ---
@@ -238,7 +253,7 @@ async function renderParkingLots() {
     sortedParkingData.forEach(lot => {
         // 設計図（テンプレート）を複製する
         const clone = template.content.cloneNode(true);
-        const cardElement = clone.querySelector('.parking-lot'); 
+        const cardElement = clone.querySelector('.parking-lot');
 
         // --- 計算ロジック ---
         const used = lot.capacity - lot.available;
@@ -255,7 +270,7 @@ async function renderParkingLots() {
             barColorClass = 'bg-red';
             statusText = '満車';
             // 満車時の半透明処理
-            cardElement.style.opacity = '0.5'; 
+            cardElement.style.opacity = '0.5';
             cardElement.style.filter = 'grayscale(30%)';
         } else if (percentage >= 80) {
             headerColorClass = 'header-orange';
@@ -264,7 +279,7 @@ async function renderParkingLots() {
         }
 
         // --- 複製した設計図に、データを埋め込む ---
-        
+
         // ヘッダーの色設定
         const header = clone.querySelector('.card-header');
         header.classList.add(headerColorClass);
@@ -287,21 +302,23 @@ async function renderParkingLots() {
         // 【1 と 3 の実装】カード自体へのクリックを無効にし、2つのボタンを追加する
         // =========================================================
         cardElement.style.cursor = 'default'; // カード全体は押せないようにする
-        
+
         // ボタンを入れる箱（コンテナ）を作る
         const actionsContainer = document.createElement('div');
         actionsContainer.className = 'card-actions';
 
-const mapBtn = document.createElement('button');
+        const mapBtn = document.createElement('button');
         mapBtn.className = 'action-btn btn-map';
         mapBtn.innerHTML = '🗺️ マップから探す';
         mapBtn.onclick = (e) => {
-            e.stopPropagation(); 
-            
-            // データベースから取得した画像URL（lot.imageUrl）を使用する
-            // もし画像URLが設定されていない場合の保険としてフォールバックも用意します
-            const imgSrc = lot.imageUrl ? lot.imageUrl : `images/img${lot.id}.jpg`;
-            openInteractiveMap(lot.id, imgSrc); 
+            e.stopPropagation();
+
+            // DBで設定した画像を使用する。画像未準備なら番号一覧へ案内する。
+            if (!lot.imageUrl) {
+                showNotification('この駐車場の地図画像は準備中です。「番号から探す」を利用してください。', 'error');
+                return;
+            }
+            openInteractiveMap(lot.id, lot.imageUrl);
         };
 
         // 🔢 番号から探すボタン（※機能3：以前のリスト方式）
@@ -310,7 +327,7 @@ const mapBtn = document.createElement('button');
         numberBtn.innerHTML = '🔢 番号から探す';
         numberBtn.onclick = (e) => {
             e.stopPropagation();
-            
+
             // 従来の「四角いマス目が並んだ詳細画面」を開く
             showLotDetail(lot.id);
         };
@@ -320,7 +337,7 @@ const mapBtn = document.createElement('button');
         actionsContainer.appendChild(numberBtn);
         cardElement.appendChild(actionsContainer);
         // =========================================================
-        
+
         // --- 完成したカードを画面に追加 ---
         container.appendChild(clone);
     });
@@ -351,8 +368,8 @@ function showLotDetail(lotId) {
     lot.spaces.forEach(space => {
         const spaceElement = document.createElement('div');
         spaceElement.className = 'parking-space';
-        
-        const isMyCar = myParkingInfo && myParkingInfo.lot_id === lotId && myParkingInfo.space_id === space.id;
+
+        const isMyCar = myParkingInfo && String(myParkingInfo.lot_id) === String(lotId) && Number(myParkingInfo.space_id) === space.id;
 
         if (isMyCar) {
             spaceElement.classList.add('space-my-car');
@@ -399,54 +416,64 @@ function updateStats() {
     document.getElementById('occupancyRate').textContent = `${occupancyRate}%`;
     document.getElementById('lastUpdated').textContent = `最終更新: ${new Date().toLocaleTimeString('ja-JP')}`;
 }
+// ウィジェットの開閉を切り替える関数
+function toggleParkingStatus() {
+    const widget = document.getElementById('myParkingStatus');
+    if (widget) {
+        widget.classList.toggle('expanded');
+    }
+}
 
+// 駐車状態ウィジェットの表示更新
 function displayMyParkingStatus() {
-    const statusDiv = document.getElementById('myParkingStatus');
+    const statusWidget = document.getElementById('myParkingStatus');
+    const toggleText = document.getElementById('widgetToggleText');
+    const detailsContent = document.getElementById('widgetDetailsContent');
+
     if (myParkingInfo) {
-        const parkedLot = parkingData.find(l => l.id === myParkingInfo.lot_id);
+        const parkedLot = parkingData.find(l => String(l.id) === String(myParkingInfo.lot_id));
+
         if (parkedLot) {
             const elapsedTime = getElapsedTime(myParkingInfo.start_time);
-            
-            // 短いテキストに変更
-            const endTimeDisplay = myParkingInfo.estimated_end_time 
-                ? `<span>予定: ${myParkingInfo.estimated_end_time}</span>` 
-                : '';
+            const endTimeDisplay = myParkingInfo.estimated_end_time ? myParkingInfo.estimated_end_time : '未定';
 
-            // ★ここから新しいコンパクトなHTML構造★
-            statusDiv.innerHTML = `
-                <div class="my-status-compact">
-                    <div class="my-status-details">
-                        <div class="my-status-title">
-                            <span class="pulse-dot"></span> 駐車中: ${parkedLot.name} (${myParkingInfo.space_id})
-                        </div>
-                        <div class="my-status-time">
-                            ${endTimeDisplay}
-                            <span>経過: ${elapsedTime}</span>
-                        </div>
-                    </div>
-                    <button class="checkout-btn" id="mainCheckoutButton">出庫する</button>
-                </div>
+            // ピル状の常時見えているテキストを更新
+            toggleText.textContent = `${parkedLot.name} (${myParkingInfo.space_id}番) ・ 経過${elapsedTime}`;
+
+            // 展開時の詳細情報を更新
+            detailsContent.innerHTML = `
+                場所: <strong>${parkedLot.name} (${myParkingInfo.space_id}番)</strong><br>
+                退庫予定: <strong>${endTimeDisplay}</strong><br>
+                経過時間: <strong>${elapsedTime}</strong>
             `;
 
+            // 出庫ボタンのイベント再バインド
             const checkoutBtn = document.getElementById('mainCheckoutButton');
             if (checkoutBtn) {
-                checkoutBtn.addEventListener('click', processSpaceCheckout);
+                // 既存のイベント重複を防ぐため一度クローンして置き換え
+                const newBtn = checkoutBtn.cloneNode(true);
+                checkoutBtn.parentNode.replaceChild(newBtn, checkoutBtn);
+                newBtn.addEventListener('click', processSpaceCheckout);
             }
 
-            statusDiv.classList.remove('hidden');
+            statusWidget.classList.remove('hidden');
         }
     } else {
-        statusDiv.classList.add('hidden');
+        statusWidget.classList.add('hidden');
+        statusWidget.classList.remove('expanded'); // 閉じておく
     }
 }
 
 async function processSpaceCheckin(lotId, spaceId, endTimeToSend) {
-    if (!currentUser) return showNotification('ログイン情報が見つかりません。', 'error');
+    if (!currentUser) return showNotification('ログインしてください', 'error');
     if (myParkingInfo) {
-        return showNotification('既に駐車済みです。出庫してから再度お試しください。', 'error');
+        return showNotification('すでに駐車登録されています。複数台の登録はできません。', 'error');
     }
+    if (parkingOperationPending) return;
+    parkingOperationPending = true;
 
     try {
+        // 正式なチェックインAPIを呼び出す
         const newParkingInfo = await apiRequest('/api/parking/checkin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -454,31 +481,45 @@ async function processSpaceCheckin(lotId, spaceId, endTimeToSend) {
                 userId: currentUser.studentId,
                 lotId: lotId,
                 spaceId: spaceId,
-                endTime: endTimeToSend
+                endTime: endTimeToSend,
+                layoutVersion: PARKING_LAYOUT_VERSION
             })
         });
 
         myParkingInfo = newParkingInfo;
-        showNotification(`${lotId}の${spaceId}に駐車登録しました。`, 'success');
+        showNotification(`第${lotId}駐車場の${spaceId}番に駐車しました`, 'success');
 
-        parkingData = await apiRequest('/api/parking-data');
-        refreshUI();
+        // 最新の駐車場データを再取得してリスト等を更新
+        // 各種モーダルおよびマップを閉じる（ホーム画面に戻す）
         closeDetailModal();
         closeEndTimeModal();
 
+        // ★追加：全画面マップが開いている場合は非表示にする
+        const interactiveMapModal = document.getElementById('interactiveMapModal');
+        if (interactiveMapModal) {
+            interactiveMapModal.style.display = 'none';
+        }
+        displayMyParkingStatus();
+        parkingData = await apiRequest('/api/parking-data');
+        refreshUI();
+
     } catch (error) {
-        // apiRequest関数でエラーが表示される
+        console.error('Checkin failed:', error);
+    } finally {
+        parkingOperationPending = false;
     }
 }
 
 // 【変更】ボタンが押されたら、いきなり処理せず「モーダルを開く」だけにする
 function processSpaceCheckout() {
     // 以前の confirm('本当に退庫しますか？') は削除！
-    openCheckoutModal(); 
+    openCheckoutModal();
 }
 
 // 【新規】モーダルの「退庫する」が押された時に実行される関数
 async function executeCheckout() {
+    if (!currentUser || parkingOperationPending) return;
+    parkingOperationPending = true;
     try {
         // サーバーに「退庫します」と伝える（既存の処理と同じ）
         await apiRequest('/api/parking/checkout', {
@@ -486,14 +527,17 @@ async function executeCheckout() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: currentUser.studentId })
         });
-        
+
         showNotification('出庫しました。', 'success');
         myParkingInfo = null; // 自分の情報をクリア
-        
+        displayMyParkingStatus();
+        closeDetailModal();
+        closeCheckoutModal();
+
         // 画面の数字などを最新にする
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
-        
+
         // 開いているモーダルをすべて閉じる
         closeDetailModal();
         closeCheckoutModal(); // ★ここが重要！
@@ -501,6 +545,8 @@ async function executeCheckout() {
     } catch (error) {
         // エラーは apiRequest 内で表示されるので、ここでは何もしない（ログだけ）
         console.error(error);
+    } finally {
+        parkingOperationPending = false;
     }
 }
 
@@ -755,7 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
-    
+
 
     // ----- 5. 画像拡大モーダルの閉じるボタン -----
 
@@ -806,7 +852,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelLogoutBtn.addEventListener('click', closeLogoutModal);
     }
     // ----- 7. 退庫確認モーダルのボタン設定 (ここを追加) -----
-    
+
     // 「退庫する」ボタンの設定
     const confirmCheckoutBtn = document.getElementById('confirmCheckoutBtn');
     if (confirmCheckoutBtn) {
@@ -841,129 +887,168 @@ const PARKING_AREAS = [
 
 // 1. 各駐車場の座標データを一元管理するオブジェクト
 const PARKING_SPOTS_DATA = {
-    // 修正ポイント：キーを数値の 5 ではなく、文字列の "lot-5" に変更します！
-    "lot-5": [
-        // 取得した第5駐車場の1番マスの完璧な座標
-{ id: 1, name: "1", polygon: [[81.998,35.292], [82.597,41.247], [88.582,47.423], [88.383,41.688]] },
-  { id: 2, name: "2", polygon: [[82.397,41.468], [82.397,46.761], [88.582,53.158], [88.383,47.423]] },
-  { id: 3, name: "3", polygon: [[82.597,46.982], [79.804,49.85], [85.989,56.026], [88.582,52.938]] },
-  { id: 4, name: "4", polygon: [[80.003,49.85], [77.609,52.496], [83.794,58.672], [85.989,56.026]] },
-  { id: 5, name: "5", polygon: [[77.609,52.643], [75.016,55.731], [81.001,61.687], [83.794,58.819]] },
-  { id: 6, name: "6", polygon: [[75.215,55.731], [72.821,58.599], [78.407,64.554], [81.001,61.687]] },
-  { id: 7, name: "7", polygon: [[72.621,58.599], [70.227,61.907], [75.814,67.422], [78.407,64.554]] },
-  { id: 8, name: "8", polygon: [[70.227,61.687], [67.634,64.775], [73.22,70.51], [75.814,67.422]] },
-  { id: 9, name: "9", polygon: [[67.634,64.775], [65.24,67.642], [71.025,73.157], [73.22,70.51]] },
-  { id: 10, name: "10", polygon: [[65.439,67.642], [63.245,70.289], [68.631,75.804], [70.826,73.157]] },
-  { id: 11, name: "11", polygon: [[63.045,70.289], [60.651,73.377], [66.038,78.892], [68.432,76.024]] },
-  { id: 12, name: "12", polygon: [[60.451,73.377], [58.057,76.465], [63.444,81.98], [65.838,78.892]] },
-  { id: 13, name: "13", polygon: [[58.057,76.465], [55.663,79.553], [60.85,84.847], [63.245,81.759]] },
-  { id: 14, name: "14", polygon: [[55.464,79.553], [53.07,82.421], [59.055,88.817], [61.05,84.847]] },
-  { id: 15, name: "15", polygon: [[53.07,82.421], [51.673,86.171], [57.658,92.126], [59.055,88.597]]},
-  { id: 16, name: "16", polygon: [[51.811,86.206], [49.616,82.322], [45.335,90.089], [48.299,92.759]] },
-  { id: 17, name: "17", polygon: [[49.616,82.322], [47.201,79.045], [41.164,84.142], [43.469,87.54]] },
-  { id: 18, name: "18", polygon: [[47.201,79.086], [44.896,75.809], [38.749,81.028], [41.164,84.061]] },
-  { id: 19, name: "19", polygon: [[44.896,76.052], [42.7,72.654], [36.443,77.751], [38.858,81.149]] },
-  { id: 20, name: "20", polygon: [[42.7,72.775], [40.285,69.498], [34.138,74.595], [36.553,77.872]] },
-  { id: 21, name: "21", polygon: [[40.176,69.498], [37.98,66.222], [31.833,71.319], [34.248,74.595]] },
-  { id: 22, name: "22", polygon: [[37.87,66.464], [33.699,60.032], [29.967,61.974], [34.687,68.892]] },
-  { id: 23, name: "23", polygon: [[29.967,61.974], [26.454,64.037], [31.723,71.561], [34.797,68.77]] },
-  { id: 24, name: "24", polygon: [[22.942,59.264], [23.82,54.935], [17.124,50.445], [14.709,53.479]] },
-  { id: 25, name: "25", polygon: [[24.479,53.924], [26.894,50.769], [21.076,45.065], [18.661,48.341]] },
-  { id: 26, name: "26", polygon: [[26.674,50.769], [29.308,47.613], [23.381,41.788], [21.076,45.186]] },
-  { id: 27, name: "27", polygon: [[29.199,47.492], [31.614,44.337], [25.686,38.633], [23.491,41.909]] },
-  { id: 28, name: "28", polygon: [[31.614,44.296], [33.919,41.262], [28.101,35.437], [25.686,38.714]] },
-  { id: 29, name: "29", polygon: [[33.919,41.019], [36.334,38.107], [30.296,32.16], [28.211,35.316]] },
-  { id: 30, name: "30", polygon: [[36.334,37.985], [38.749,34.83], [32.711,29.005], [30.406,32.282]] },
-  { id: 31, name: "31", polygon: [[38.749,34.83], [41.164,31.796], [35.126,25.85], [32.711,29.005]] },
-  { id: 32, name: "32", polygon: [[41.054,31.675], [43.578,28.641], [37.431,22.573], [35.126,25.728]] },
-  { id: 33, name: "33", polygon: [[43.578,28.519], [45.993,25.485], [39.846,19.417], [37.431,22.816]] },
-  { id: 34, name: "34", polygon: [[45.884,25.485], [48.299,22.209], [42.151,16.141], [39.737,19.417]] },
-  { id: 35, name: "35", polygon: [[45.884,11.044], [51.043,14.684], [55.434,7.039], [51.482,3.519]] },
-  { id: 36, name: "36", polygon: [[51.043,14.927], [53.787,17.476], [58.397,9.709], [55.324,7.16]] },
-  { id: 37, name: "37", polygon: [[53.787,17.476], [56.861,20.267], [61.251,12.257], [58.397,9.709]] },
-  { id: 38, name: "38", polygon: [[56.641,20.267], [59.495,22.937], [64.105,14.927], [61.251,12.379]] },
-  { id: 39, name: "39", polygon: [[59.495,22.937], [62.349,25.728], [66.85,17.597], [63.996,14.927]] },
-  { id: 40, name: "40", polygon: [[62.349,25.728], [65.203,28.641], [69.813,20.267], [66.85,17.718]] },
-  { id: 41, name: "41", polygon: [[65.313,28.519], [67.838,31.432], [72.777,23.058], [69.813,20.267]] },
-  { id: 42, name: "42", polygon: [[53.897,27.791], [48.847,34.345], [51.482,37.015], [56.641,30.583]] },
-  { id: 43, name: "43", polygon: [[56.641,30.704], [51.592,37.015], [54.446,39.806], [59.495,33.374]] },
-  { id: 44, name: "44", polygon: [[54.336,39.927], [57.08,42.476], [62.239,36.044], [59.385,33.252]] },
-  { id: 45, name: "45", polygon: [[57.08,42.476], [59.934,45.267], [64.984,38.835], [62.239,35.922]] },
-  { id: 46, name: "46", polygon: [[64.984,38.835], [59.824,45.267], [62.678,47.937], [67.728,41.626]] },
-  { id: 47, name: "47", polygon: [[67.728,41.626], [62.569,47.816], [65.423,50.607], [70.472,44.296]] },
-  { id: 48, name: "48", polygon: [[70.472,44.296], [65.532,50.485], [68.277,53.155], [73.326,46.966]] },
-  { id: 49, name: "49", polygon: [[68.277,53.398], [63.117,59.83], [60.263,57.039], [65.423,50.728]] },
-  { id: 50, name: "50", polygon: [[65.423,50.728], [60.483,57.039], [57.629,54.369], [62.678,47.816]] },
-  { id: 51, name: "51", polygon: [[62.678,47.816], [57.629,54.369], [54.775,51.699], [59.934,45.146]] },
-  { id: 52, name: "52", polygon: [[59.934,45.146], [54.885,51.456], [52.031,48.908], [56.97,42.476]] },
-  { id: 53, name: "53", polygon: [[56.97,42.476], [52.031,48.786], [49.177,46.238], [54.446,39.806]] },
-  { id: 54, name: "54", polygon: [[54.446,39.806], [49.286,46.117], [46.432,43.447], [51.592,36.893]] },
-  { id: 55, name: "55", polygon: [[51.372,37.136], [46.542,43.325], [43.688,40.655], [49.067,34.223]] },
-  { id: 56, name: "56", polygon: [[53.568,71.966], [58.507,65.534], [55.763,62.743], [50.823,69.175]] },
-  { id: 57, name: "57", polygon: [[50.714,69.296], [55.653,62.864], [53.019,60.073], [47.969,66.383]] },
-  { id: 58, name: "58", polygon: [[47.969,66.383], [52.909,60.073], [50.274,57.524], [45.225,63.592]] },
-  { id: 59, name: "59", polygon: [[45.225,63.592], [50.274,57.524], [47.42,54.733], [42.481,61.044]] },
-  { id: 60, name: "60", polygon: [[42.481,61.044], [47.42,54.612], [44.786,51.82], [39.737,58.252]] },
-  { id: 61, name: "61", polygon: [[39.737,58.252], [44.676,51.942], [41.932,49.272], [36.883,55.461]] },
-  { id: 62, name: "62", polygon: [[36.883,55.461], [41.932,49.272], [39.188,46.602], [34.029,52.791]] }
+    // ★修正ポイント1：キーを "lot-5" から数値の 5 に変更しました！
+    5: [
+        { id: 1, name: "1", polygon: [[81.998,35.292], [82.597,41.247], [88.582,47.423], [88.383,41.688]] },
+        { id: 2, name: "2", polygon: [[82.397,41.468], [82.397,46.761], [88.582,53.158], [88.383,47.423]] },
+        { id: 3, name: "3", polygon: [[82.597,46.982], [79.804,49.85], [85.989,56.026], [88.582,52.938]] },
+        { id: 4, name: "4", polygon: [[80.003,49.85], [77.609,52.496], [83.794,58.672], [85.989,56.026]] },
+        { id: 5, name: "5", polygon: [[77.609,52.643], [75.016,55.731], [81.001,61.687], [83.794,58.819]] },
+        { id: 6, name: "6", polygon: [[75.215,55.731], [72.821,58.599], [78.407,64.554], [81.001,61.687]] },
+        { id: 7, name: "7", polygon: [[72.621,58.599], [70.227,61.907], [75.814,67.422], [78.407,64.554]] },
+        { id: 8, name: "8", polygon: [[70.227,61.687], [67.634,64.775], [73.22,70.51], [75.814,67.422]] },
+        { id: 9, name: "9", polygon: [[67.634,64.775], [65.24,67.642], [71.025,73.157], [73.22,70.51]] },
+        { id: 10, name: "10", polygon: [[65.439,67.642], [63.245,70.289], [68.631,75.804], [70.826,73.157]] },
+        { id: 11, name: "11", polygon: [[63.045,70.289], [60.651,73.377], [66.038,78.892], [68.432,76.024]] },
+        { id: 12, name: "12", polygon: [[60.451,73.377], [58.057,76.465], [63.444,81.98], [65.838,78.892]] },
+        { id: 13, name: "13", polygon: [[58.057,76.465], [55.663,79.553], [60.85,84.847], [63.245,81.759]] },
+        { id: 14, name: "14", polygon: [[55.464,79.553], [53.07,82.421], [59.055,88.817], [61.05,84.847]] },
+        { id: 15, name: "15", polygon: [[53.07,82.421], [51.673,86.171], [57.658,92.126], [59.055,88.597]]},
+        { id: 16, name: "16", polygon: [[51.811,86.206], [49.616,82.322], [45.335,90.089], [48.299,92.759]] },
+        { id: 17, name: "17", polygon: [[49.616,82.322], [47.201,79.045], [41.164,84.142], [43.469,87.54]] },
+        { id: 18, name: "18", polygon: [[47.201,79.086], [44.896,75.809], [38.749,81.028], [41.164,84.061]] },
+        { id: 19, name: "19", polygon: [[44.896,76.052], [42.7,72.654], [36.443,77.751], [38.858,81.149]] },
+        { id: 20, name: "20", polygon: [[42.7,72.775], [40.285,69.498], [34.138,74.595], [36.553,77.872]] },
+        { id: 21, name: "21", polygon: [[40.176,69.498], [37.98,66.222], [31.833,71.319], [34.248,74.595]] },
+        { id: 22, name: "22", polygon: [[29.967,61.974], [26.454,64.037], [31.723,71.561], [34.797,68.77]] },
+        { id: 23, name: "23", polygon: [[22.942,59.264], [23.82,54.935], [17.124,50.445], [14.709,53.479]] },
+        { id: 24, name: "24", polygon: [[24.479,53.924], [26.894,50.769], [21.076,45.065], [18.661,48.341]] },
+        { id: 25, name: "25", polygon: [[26.674,50.769], [29.308,47.613], [23.381,41.788], [21.076,45.186]] },
+        { id: 26, name: "26", polygon: [[29.199,47.492], [31.614,44.337], [25.686,38.633], [23.491,41.909]] },
+        { id: 27, name: "27", polygon: [[31.614,44.296], [33.919,41.262], [28.101,35.437], [25.686,38.714]] },
+        { id: 28, name: "28", polygon: [[33.919,41.019], [36.334,38.107], [30.296,32.16], [28.211,35.316]] },
+        { id: 29, name: "29", polygon: [[36.334,37.985], [38.749,34.83], [32.711,29.005], [30.406,32.282]] },
+        { id: 30, name: "30", polygon: [[38.749,34.83], [41.164,31.796], [35.126,25.85], [32.711,29.005]] },
+        { id: 31, name: "31", polygon: [[41.054,31.675], [43.578,28.641], [37.431,22.573], [35.126,25.728]] },
+        { id: 32, name: "32", polygon: [[43.578,28.519], [45.993,25.485], [39.846,19.417], [37.431,22.816]] },
+        { id: 33, name: "33", polygon: [[45.884,25.485], [48.299,22.209], [42.151,16.141], [39.737,19.417]] },
+        { id: 34, name: "34", polygon: [[45.884,11.044], [51.043,14.684], [55.434,7.039], [51.482,3.519]] },
+        { id: 35, name: "35", polygon: [[51.043,14.927], [53.787,17.476], [58.397,9.709], [55.324,7.16]] },
+        { id: 36, name: "36", polygon: [[53.787,17.476], [56.861,20.267], [61.251,12.257], [58.397,9.709]] },
+        { id: 37, name: "37", polygon: [[56.641,20.267], [59.495,22.937], [64.105,14.927], [61.251,12.379]] },
+        { id: 38, name: "38", polygon: [[59.495,22.937], [62.349,25.728], [66.85,17.597], [63.996,14.927]] },
+        { id: 39, name: "39", polygon: [[62.349,25.728], [65.203,28.641], [69.813,20.267], [66.85,17.718]] },
+        { id: 40, name: "40", polygon: [[65.313,28.519], [67.838,31.432], [72.777,23.058], [69.813,20.267]] },
+        { id: 41, name: "41", polygon: [[53.897,27.791], [48.847,34.345], [51.482,37.015], [56.641,30.583]] },
+        { id: 42, name: "42", polygon: [[56.641,30.704], [51.592,37.015], [54.446,39.806], [59.495,33.374]] },
+        { id: 43, name: "43", polygon: [[54.336,39.927], [57.08,42.476], [62.239,36.044], [59.385,33.252]] },
+        { id: 44, name: "44", polygon: [[57.08,42.476], [59.934,45.267], [64.984,38.835], [62.239,35.922]] },
+        { id: 45, name: "45", polygon: [[64.984,38.835], [59.824,45.267], [62.678,47.937], [67.728,41.626]] },
+        { id: 46, name: "46", polygon: [[67.728,41.626], [62.569,47.816], [65.423,50.607], [70.472,44.296]] },
+        { id: 47, name: "47", polygon: [[70.472,44.296], [65.532,50.485], [68.277,53.155], [73.326,46.966]] },
+        { id: 48, name: "48", polygon: [[68.277,53.398], [63.117,59.83], [60.263,57.039], [65.423,50.728]] },
+        { id: 49, name: "49", polygon: [[65.423,50.728], [60.483,57.039], [57.629,54.369], [62.678,47.816]] },
+        { id: 50, name: "50", polygon: [[62.678,47.816], [57.629,54.369], [54.775,51.699], [59.934,45.146]] },
+        { id: 51, name: "51", polygon: [[59.934,45.146], [54.885,51.456], [52.031,48.908], [56.97,42.476]] },
+        { id: 52, name: "52", polygon: [[56.97,42.476], [52.031,48.786], [49.177,46.238], [54.446,39.806]] },
+        { id: 53, name: "53", polygon: [[54.446,39.806], [49.286,46.117], [46.432,43.447], [51.592,36.893]] },
+        { id: 54, name: "54", polygon: [[51.372,37.136], [46.542,43.325], [43.688,40.655], [49.067,34.223]] },
+        { id: 55, name: "55", polygon: [[53.568,71.966], [58.507,65.534], [55.763,62.743], [50.823,69.175]] },
+        { id: 56, name: "56", polygon: [[50.714,69.296], [55.653,62.864], [53.019,60.073], [47.969,66.383]] },
+        { id: 57, name: "57", polygon: [[47.969,66.383], [52.909,60.073], [50.274,57.524], [45.225,63.592]] },
+        { id: 58, name: "58", polygon: [[45.225,63.592], [50.274,57.524], [47.42,54.733], [42.481,61.044]] },
+        { id: 59, name: "59", polygon: [[42.481,61.044], [47.42,54.612], [44.786,51.82], [39.737,58.252]] },
+        { id: 60, name: "60", polygon: [[39.737,58.252], [44.676,51.942], [41.932,49.272], [36.883,55.461]] },
+        { id: 61, name: "61", polygon: [[36.883,55.461], [41.932,49.272], [39.188,46.602], [34.029,52.791]] }
     ],
     // 将来、第3駐車場を追加する場合は以下のようにします
-    "lot-3": [
+    3: [
         // 第3駐車場の座標データ...
     ]
 };
 
-
-// 2. マップを開き、個別マスを生成する（★本番用：堅牢なデータ連携 ＆ 透明エリア版）
-function openInteractiveMap(lotId, imgSrc) {
+// 2. マップを開き、個別マスを生成する（A案：リアルタイム都度取得＆塗り分け版）
+async function openInteractiveMap(lotId, imgSrc) {
+    const requestId = ++mapRequestId;
     const oldModal = document.getElementById('interactiveMapModal');
     if (oldModal) oldModal.remove();
+    latestMapStatus = null;
+
+    const lot = parkingData.find(item => String(item.id) === String(lotId));
+    if (!lot) {
+        showNotification('駐車場一覧を読み込み直してから、地図を開いてください。', 'error');
+        return;
+    }
+    // 座標は保管したまま、DBの登録可能な枠番号だけを表示する。
+    const currentSpots = (PARKING_SPOTS_DATA[String(lotId)] || [])
+        .filter(spot => Number.isInteger(spot.id) && spot.id >= 1 && spot.id <= lot.capacity);
+    if (!currentSpots.length) {
+        showNotification('この駐車場の地図の枠は準備中です。「番号から探す」を利用してください。', 'error');
+        return;
+    }
+
+    // 空き状況を確認できたときだけ、登録できる地図を表示する。
+    let latestParkingStatus;
+    try {
+        latestParkingStatus = await apiRequest('/api/parking/status');
+        if (!Array.isArray(latestParkingStatus)) throw new Error('空き状況のデータが正しくありません。');
+    } catch (error) {
+        console.error('通信エラー:', error);
+        showNotification('空き状況を確認できないため、地図を開けません。時間をおいて再度お試しください。', 'error');
+        return;
+    }
+    if (requestId !== mapRequestId || !currentUser) return;
+    latestMapStatus = { lotId: String(lotId), spots: latestParkingStatus };
 
     const mapModal = document.createElement('div');
     mapModal.id = 'interactiveMapModal';
-    mapModal.className = 'map-fullscreen-modal'; 
+    mapModal.className = 'map-fullscreen-modal';
     document.body.appendChild(mapModal);
 
     const img = new Image();
-    img.src = imgSrc;
+    img.onerror = () => {
+        if (requestId !== mapRequestId) return;
+        mapModal.remove();
+        latestMapStatus = null;
+        showNotification('地図画像を読み込めません。「番号から探す」を利用してください。', 'error');
+    };
     img.onload = () => {
-        // ★ アーキテクチャ改善：型安全なデータ取得
-        // PostgreSQLから渡される lotId が数値でも文字列でも確実にマッチするように吸収し、
-        // 開発者用コンソールにデバッグログを出力します。
-        console.log(`[Debug] 展開リクエスト受信 - 駐車場ID: ${lotId}`);
-        const currentSpots = PARKING_SPOTS_DATA[String(lotId)] || PARKING_SPOTS_DATA[Number(lotId)] || [];
-
-        if (currentSpots.length === 0) {
-            console.warn(`[Warn] ID: ${lotId} の座標データが PARKING_SPOTS_DATA に定義されていません。`);
+        if (requestId !== mapRequestId || !currentUser) {
+            mapModal.remove();
+            return;
         }
 
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-        
         currentSpots.forEach(spot => spot.polygon.forEach(p => {
             if(p[0] < minX) minX = p[0]; if(p[1] < minY) minY = p[1];
             if(p[0] > maxX) maxX = p[0]; if(p[1] > maxY) maxY = p[1];
         }));
-        
-        minX -= 2; minY -= 2; maxX += 2; maxY += 2; 
+
+        minX -= 2; minY -= 2; maxX += 2; maxY += 2;
         if (minX === Infinity) { minX = 0; minY = 0; maxX = 100; maxY = 100; }
         const autoAreaPoints = `${minX},${minY} ${maxX},${minY} ${maxX},${maxY} ${minX},${maxY}`;
 
         let spotsSvg = currentSpots.map(spot => {
+            // ★取得した最新のDBデータと突き合わせて色を決定
+            const spotStatus = latestParkingStatus.find(s =>
+                String(s.lot_id) === String(lotId) && Number(s.spot_number) === Number(spot.id)
+            );
+
+            // デフォルトは空き（緑色）
+            let fillColor = 'rgba(46, 204, 113, 0.4)';
+            let strokeColor = '#2ecc71';
+
+            // もしDBにデータが存在し、occupied（満車）なら赤色にする
+            if (spotStatus && spotStatus.status === 'occupied') {
+                fillColor = 'rgba(231, 76, 60, 0.6)';
+                strokeColor = '#e74c3c';
+            }
+
             const pts = spot.polygon.map(p => `${p[0]},${p[1]}`).join(' ');
-            return `<polygon points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn(${lotId}, '${spot.name}')" style="display: block; fill: rgba(46, 204, 113, 0.4); stroke: #2ecc71; stroke-width: 0.3; cursor: pointer;" />`;
+            // ★修正ポイント2：polygonタグに id="spot-${lotId}-${spot.id}" を追加しました！
+            return `<polygon id="spot-${lotId}-${spot.id}" points="${pts}" class="spot-polygon" onclick="handleSpotCheckIn('${lotId}', '${spot.id}')" style="display: block; fill: ${fillColor}; stroke: ${strokeColor}; stroke-width: 0.3; cursor: pointer;" />`;
         }).join('');
 
         mapModal.innerHTML = `
             <div class="map-zoom-content" style="position: relative; overflow: hidden; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.95);">
                 <span onclick="document.getElementById('interactiveMapModal').style.display='none'" style="position: absolute; top: 20px; right: 30px; font-size: 50px; color: white; cursor: pointer; z-index: 10000; line-height: 1;">&times;</span>
-                
+
                 <div id="panzoom-container" style="position: relative; display: inline-block; line-height: 0; font-size: 0; margin: 0 auto;">
                     <img src="${imgSrc}" style="display: block; max-width: 95vw; max-height: 85vh; width: auto; height: auto; pointer-events: none; margin: 0; padding: 0; border: none;">
-                    
+
                     <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; margin: 0; padding: 0;">
                         ${spotsSvg}
-                        
-                        <!-- ★ 修正ポイント：職人モードを終了し、完全に透明な本番用ダミーエリアに戻しました -->
+
                         <polygon points="${autoAreaPoints}" id="main-area" style="fill: transparent; stroke: none; pointer-events: auto; cursor: pointer;" />
                     </svg>
                 </div>
@@ -980,22 +1065,47 @@ function openInteractiveMap(lotId, imgSrc) {
                 elem.parentElement.addEventListener('wheel', panzoom.zoomWithWheel);
 
                 mainArea.onclick = (e) => {
-                    mainArea.style.display = 'none'; 
+                    mainArea.style.display = 'none';
                     document.querySelectorAll('.spot-polygon').forEach(el => {
                         el.style.pointerEvents = 'auto';
                     });
-                    panzoom.zoomToPoint(2.5, { clientX: e.clientX, clientY: e.clientY }, { animate: true }); 
+                    panzoom.zoomToPoint(2.5, { clientX: e.clientX, clientY: e.clientY }, { animate: true });
                 };
             } catch (err) {
                 console.error("Panzoomエラー:", err);
             }
-        }, 100); 
+        }, 100);
     };
+    img.src = imgSrc;
 }
-// 3. 個別マスをタップした時の処理
-function handleSpotCheckIn(lotId, spotName) {
-    document.getElementById('interactiveMapModal').style.display = 'none';
-    showUndoToast(`【${spotName}番】に駐車しました`, () => {
-        console.log(`【取り消し】 ${spotName}番 の駐車をキャンセルしました`);
-    });
+
+// 3. マスがクリックされたときの処理（時間入力フロー統合版）
+async function handleSpotCheckIn(lotId, spotName) {
+    if (!currentUser) return showNotification('ログインしてください。', 'error');
+    const lot = parkingData.find(item => String(item.id) === String(lotId));
+    const spotNumber = Number(spotName);
+    if (!lot || !Number.isInteger(spotNumber) || spotNumber < 1 || spotNumber > lot.capacity) {
+        showNotification('この駐車枠は登録対象外です。地図を開き直してください。', 'error');
+        return;
+    }
+    // 【要件2対応】すでに駐車登録している場合は、UI側で弾く
+    if (myParkingInfo) {
+        showNotification('すでに駐車登録されています。複数台の登録はできません。', 'error');
+        return;
+    }
+
+    if (!latestMapStatus || latestMapStatus.lotId !== String(lotId)) {
+        showNotification('地図を開き直して、最新の空き状況を確認してください。', 'error');
+        return;
+    }
+    const spotStatus = latestMapStatus.spots.find(spot =>
+        String(spot.lot_id) === String(lotId) && Number(spot.spot_number) === Number(spotName)
+    );
+    if (spotStatus?.status === 'occupied') {
+        showNotification('その駐車枠は使用中です。緑色の空き枠を選んでください。', 'error');
+        return;
+    }
+
+    // 古いToggleAPIではなく、「番号から探す」と同じ予定時刻入力モーダルを開く
+    openEndTimeModal(lotId, spotName);
 }

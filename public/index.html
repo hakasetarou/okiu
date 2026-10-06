@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>沖縄国際大学 駐車場管理システム</title>
-    <link rel="stylesheet" href="style.css?v=1.6">
-    <script src="https://unpkg.com/@panzoom/panzoom/dist/panzoom.min.js"></script>
+    <link rel="stylesheet" href="style.css?v=1.8">
 </head>
 <body>
 
@@ -15,7 +14,7 @@
                 <h1>駐車場管理システム</h1>
                 <p class="subtitle">ログインまたは新規登録をしてください</p>
             </div>
-            
+
             <div id="errorMessage" class="error-message hidden"></div>
 
             <form id="loginMode" class="login-form">
@@ -29,7 +28,7 @@
                 </div>
                 <button type="submit" class="login-btn">ログイン</button>
                 <p class="switch-mode">
-                    アカウントをお持ちでないですか？ 
+                    アカウントをお持ちでないですか？
                     <a href="#" id="switchToRegisterLink">新規登録</a>
                 </p>
             </form>
@@ -53,7 +52,7 @@
                 </div>
                 <button type="submit" class="register-btn">登録する</button>
                  <p class="switch-mode">
-                    すでにアカウントをお持ちですか？ 
+                    すでにアカウントをお持ちですか？
                     <a href="#" id="switchToLoginLink">ログイン</a>
                 </p>
             </form>
@@ -69,8 +68,24 @@
                 <div class="subtitle">駐車場管理システム</div>
                 <div class="last-updated" id="lastUpdated">最終更新: --</div>
             </div>
-            
-            <div id="myParkingStatus" class="my-parking-status hidden"></div>
+
+<div id="myParkingStatus" class="parking-status-widget hidden">
+    <button class="widget-toggle" onclick="toggleParkingStatus()">
+        <span class="pulse-dot"></span>
+        <span class="widget-toggle-text" id="widgetToggleText">駐車状況</span>
+        <span class="widget-toggle-arrow">▲</span>
+    </button>
+    <div class="widget-body">
+        <div class="widget-header">
+            <span class="widget-title">現在の駐車状況</span>
+            <button class="widget-close" onclick="toggleParkingStatus()">✕</button>
+        </div>
+        <div class="widget-details" id="widgetDetailsContent">
+            <!-- JavaScript動的埋め込み用 -->
+        </div>
+        <button class="checkout-btn-red" id="mainCheckoutButton">ここから出庫</button>
+    </div>
+</div>
 
             <div class="stats-bar">
                 <div class="stat-item">
@@ -161,7 +176,6 @@
             </div>
         </div>
     </template>
-nzoom@4.5    <script src="script.js?v=1.7"></script>
     <div id="checkoutModal" class="modal">
     <div class="modal-content small-modal">
         <h3>出庫確認</h3>
@@ -173,5 +187,6 @@ nzoom@4.5    <script src="script.js?v=1.7"></script>
     </div>
 </div>
 <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
+<script src="script.js?v=1.9"></script>
 </body>
 </html>
