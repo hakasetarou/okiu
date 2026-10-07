@@ -24,10 +24,10 @@ const pool = require('../db');
             }
             await client.query('COMMIT');
         }
-        console.log('駐車場IDの統一と、重複登録を防ぐDB設定を適用しました。');
+        console.log('駐車場のDB設定を適用しました（適用済みの変更はスキップしました）。');
     } catch (error) {
         if (client) await client.query('ROLLBACK').catch(() => {});
-        console.error('DB設定を適用できませんでした。既存データの重複を確認してください。', error.code || error.message);
+        console.error('DB設定を適用できませんでした。', error.message);
         process.exitCode = 1;
     } finally {
         if (client) client.release();

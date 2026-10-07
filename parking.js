@@ -120,8 +120,10 @@ function createParkingRouter(pool) {
             !(endTime === '未定' || (typeof endTime === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(endTime)))) {
             return res.status(400).json({ message: '利用者、駐車枠、退庫予定時刻の入力を確認してください。' });
         }
-        if (lotNumber(lotId) === 5 && layoutVersion !== 2) {
-            return res.status(409).json({ message: '第5駐車場の枠番号が更新されています。画面を再読み込みしてから登録してください。' });
+        const number = lotNumber(lotId);
+        const expectedLayoutVersion = { 1: 4, 2: 2, 3: 1, 4: 1, 5: 2, 7: 2 }[number];
+        if (expectedLayoutVersion && layoutVersion !== expectedLayoutVersion) {
+            return res.status(409).json({ message: `第${number}駐車場の枠番号が更新されています。画面を再読み込みしてから登録してください。` });
         }
 
         await transaction(res, async client => {

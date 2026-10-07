@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>駐車枠の座標設定</title>
+    <link rel="stylesheet" href="coordinate-editor.css?v=1">
+    <script src="parking-map-data.js?v=1" defer></script>
+    <script src="coordinate-editor.js?v=1" defer></script>
+</head>
+<body>
+    <header>
+        <h1>駐車枠の座標設定</h1>
+        <a href="/">駐車場一覧へ戻る</a>
+    </header>
+    <p class="intro">地図の駐車枠を囲んで、クリックできる範囲を設定します。駐車登録や出庫は行いません。</p>
+    <div id="message" class="message" role="status" aria-live="polite">駐車場を読み込んでいます…</div>
+    <main>
+        <aside>
+            <label>駐車場<select id="lotSelect" disabled></select></label>
+            <p id="lotSummary"></p>
+            <label>設定する台数<input id="capacity" type="number" min="1" max="2000" step="1"></label>
+            <p id="capacityNote" class="note"></p>
+            <label>指定方法<select id="drawMode"><option value="single">1枠ずつ囲む</option><option value="row">並んだ一列をまとめて囲む</option></select></label>
+            <label>開始枠番号<input id="spotNumber" type="number" min="1" step="1" value="1"></label>
+            <label id="rowCountLabel" hidden>一列の台数<input id="rowCount" type="number" min="1" max="2000" step="1" value="1"></label>
+            <p id="drawHelp">枠の四隅を、外周に沿って順番にクリックしてください。</p>
+            <svg id="rowGuide" viewBox="0 0 240 95" hidden aria-label="一列の指定順序。1から2へ向かって枠番号が増えます。">
+                <path d="M25 25H210V65H25Z M70 25V65 M115 25V65 M160 25V65" fill="#eaf7ef" stroke="#198754"/>
+                <g font-size="14" fill="#172533"><text x="12" y="20">1</text><text x="213" y="20">2</text><text x="213" y="82">3</text><text x="12" y="82">4</text><text x="37" y="52">開始</text><text x="130" y="52">→</text></g>
+            </svg>
+            <p id="pointCount">指定した角：0 / 4</p>
+            <div class="button-pair"><button id="undoPoint" type="button">角を1つ戻す</button><button id="clearPoints" type="button">角を取り直す</button></div>
+            <button id="saveSpot" class="primary" type="button" disabled>囲んだ枠を保存</button>
+            <p class="note">指定した番号がすでにある場合は、その枠を更新します。一列の分割は等間隔です。幅の違う枠は1枠ずつ指定してください。</p>
+            <hr>
+            <p id="progress">設定済み：0枠</p>
+            <div class="button-pair"><button id="undoSave" type="button" disabled>前の保存に戻す</button><button id="deleteSpot" type="button">指定番号を削除</button></div>
+            <div id="spotList" class="spot-list" aria-label="設定済みの枠番号"></div>
+            <label class="import-label">保存済みの座標を読み込む<input id="importFile" type="file" accept=".json,application/json"></label>
+            <button id="download" class="primary" type="button" disabled>座標ファイルを保存</button>
+            <p id="saveHelp" class="note"></p>
+            <p class="note">作業途中の座標は、このブラウザに自動保存します。システムで使うには、保存したファイルを上記の場所へ置いてください。</p>
+        </aside>
+        <section class="map-section" aria-label="地図上の座標指定">
+            <div class="toolbar"><button id="zoomOut" type="button">縮小</button><span id="zoomLabel">100%</span><button id="zoomIn" type="button">拡大</button></div>
+            <div id="mapViewport" class="map-viewport">
+                <div id="mapStage" class="map-stage">
+                    <img id="mapImage" alt="選択した駐車場の地図" draggable="false">
+                    <svg id="mapOverlay" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="四隅をクリックして指定"></svg>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

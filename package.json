@@ -2,6 +2,12 @@
   "scripts": {
     "start": "node server.js",
     "migrate": "node scripts/migrate.js",
+    "build:lot1-map": "node scripts/build-lot1-map.js",
+    "build:lot2-map": "node scripts/build-lot2-map.js",
+    "build:lot3-map": "node scripts/build-lot3-map.js",
+    "build:lot4-map": "node scripts/build-lot4-map.js",
+    "build:lot7-map": "node scripts/build-lot7-map.js",
+    "build:lot3-map-review": "node scripts/build-lot3-map-review.js",
     "test": "node --test tests/*.test.js"
   },
   "dependencies": {
