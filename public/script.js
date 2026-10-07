@@ -157,26 +157,14 @@ function closeLogoutModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// 【新規】実際にログアウト処理を行う関数（「はい」が押された時）
-async function processLogout() {
-    // サーバーにログアウト通知を送る（既存の処理と同じ）
-    // ※もしセッション管理などをしていないなら、ここは省略しても画面切り替えだけで動きますが、念のため残します
-    try {
-        /* 必要に応じてAPIリクエストを送る */
-        // await apiRequest('/api/logout', { method: 'POST' });
-    } catch (error) {
-        console.error(error);
-    }
-
+// ログアウト確認後に、利用者情報を消してログイン画面へ戻す。
+function processLogout() {
     // ユーザー情報を消す
     currentUser = null;
     myParkingInfo = null;
 
-    // 画面を切り替える
+    // 画面を切り替え、開いているモーダルも閉じる。
     showLoginScreen();
-
-    // モーダルを閉じる
-    closeLogoutModal();
 }
 
 
@@ -220,7 +208,7 @@ async function initializeSystem() {
 // =================================================================================
 // 駐車場関連の処理 (テンプレート利用版：HTMLタグなし)
 // =================================================================================
-async function renderParkingLots() {
+function renderParkingLots() {
     const container = document.getElementById('parkingLots');
     const template = document.getElementById('parking-card-template');
 
@@ -444,15 +432,6 @@ function displayMyParkingStatus() {
                 経過時間: <strong>${elapsedTime}</strong>
             `;
 
-            // 出庫ボタンのイベント再バインド
-            const checkoutBtn = document.getElementById('mainCheckoutButton');
-            if (checkoutBtn) {
-                // 既存のイベント重複を防ぐため一度クローンして置き換え
-                const newBtn = checkoutBtn.cloneNode(true);
-                checkoutBtn.parentNode.replaceChild(newBtn, checkoutBtn);
-                newBtn.addEventListener('click', processSpaceCheckout);
-            }
-
             statusWidget.classList.remove('hidden');
         }
     } else {
@@ -532,10 +511,6 @@ async function executeCheckout() {
         parkingData = await apiRequest('/api/parking-data');
         refreshUI();
 
-        // 開いているモーダルをすべて閉じる
-        closeDetailModal();
-        closeCheckoutModal(); // ★ここが重要！
-
     } catch (error) {
         // エラーは apiRequest 内で表示されるので、ここでは何もしない（ログだけ）
         console.error(error);
@@ -549,8 +524,6 @@ async function executeCheckout() {
 // =================================================================================
 // ヘルパー関数 (変更なし)
 // =================================================================================
-function getStatusClass(available, capacity) { if (available === 0) return 'full'; const rate = available / capacity; if (rate > 0.3) return 'available'; return 'limited'; }
-function getStatusText(available, capacity) { if (available === 0) return '満車'; const rate = available / capacity; if (rate > 0.3) return '空きあり'; return '残りわずか'; }
 function closeDetailModal() { const modal = document.getElementById('lotDetailModal'); if (modal) modal.style.display = 'none'; }
 function getElapsedTime(startTime) { const diffMinutes = Math.floor((new Date() - new Date(startTime)) / 60000); const hours = Math.floor(diffMinutes / 60); const minutes = diffMinutes % 60; return `${hours > 0 ? hours + '時間' : ''} ${minutes}分`; }
 
@@ -785,6 +758,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    // 駐車状況の出庫ボタンは、起動時に一度だけ設定する。
+    const mainCheckoutButton = document.getElementById('mainCheckoutButton');
+    if (mainCheckoutButton) {
+        mainCheckoutButton.addEventListener('click', processSpaceCheckout);
+    }
+
     // ----- 4. 詳細モーダルの閉じるボタン -----
 
     const closeDetailModalButton = document.querySelector('#lotDetailModal .close');
@@ -862,18 +841,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
-// =================================================================================
-// ★★★ A案：エリア選択 ＆ 空きスペース自動割り当て機能 ★★★
-// =================================================================================
-
-// 1. Claudeで作った多角形の座標データ
-const PARKING_AREAS = [
-  { id: 1, name: "エリアA", polygon: [[480,200], [368,335], [573,521], [708,372], [481,199]]},
-  { id: 2, name: "エリアA2", polygon: [[347,362], [195,527], [395,785], [572,542], [347,356]] },
-  { id: 3, name: "エリアA3", polygon: [[445,720], [771,264], [897,407], [561,805], [446,720]] },
-  { id: 4, name: "エリアA4", polygon: [[728,212], [477,2], [404,87], [679,307], [732,206]] },
-  { id: 5, name: "エリアA5", polygon: [[384,102], [99,474], [179,525], [474,167], [386,99]] }
-];
 
 // =================================================================================
 // ★★★ ドリルダウン型：マップ展開 ＆ 個別マスタップ機能 ★★★
@@ -1035,7 +1002,7 @@ async function openInteractiveMap(lotId, imgSrc) {
 }
 
 // 3. マスがクリックされたときの処理（時間入力フロー統合版）
-async function handleSpotCheckIn(lotId, spotName) {
+function handleSpotCheckIn(lotId, spotName) {
     if (!currentUser) return showNotification('ログインしてください。', 'error');
     const lot = parkingData.find(item => String(item.id) === String(lotId));
     const spotNumber = Number(spotName);
