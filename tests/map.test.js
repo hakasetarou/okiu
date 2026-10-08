@@ -100,6 +100,7 @@ test('corrected map contains and renders exactly 61 consecutive spaces', async (
     page.context.document.body.appendChild = element => { map = element; };
     await page.context.openInteractiveMap(5, 'images/img5.jpg');
     assert.equal((map.innerHTML.match(/class="spot-polygon"/g) || []).length, 61);
+    assert.equal((map.innerHTML.match(/class="map-spot-number"/g) || []).length, 61);
     assert.ok(map.innerHTML.includes('id="spot-5-61"'));
     assert.ok(!map.innerHTML.includes('id="spot-5-62"'));
     const coordinates = JSON.parse(fs.readFileSync('public/data/parking-spots/lot-5.json', 'utf8'));
@@ -108,10 +109,9 @@ test('corrected map contains and renders exactly 61 consecutive spaces', async (
         Array.from({ length: 61 }, (_, index) => index + 1));
     const new22 = coordinates.find(spot => spot.id === 22);
     assert.equal(new22.name, '22');
-    assert.deepEqual(Array.from(new22.polygon[0]), [29.967, 61.974]);
     const last = coordinates[60];
     assert.equal(last.name, '61');
-    assert.deepEqual(Array.from(last.polygon[0]), [36.883, 55.461]);
+    assert.ok(map.innerHTML.includes('>61</text>'));
 });
 
 test('another lot uses its own coordinates and status instead of lot 5', async () => {

@@ -233,6 +233,44 @@ test('second-lot display image retains the original diagram and corrects only th
     }
 });
 
+test('fifth-lot rebuilt map preserves all 61 existing physical bay numbers without overlaps or new areas', () => {
+    const spec = JSON.parse(fs.readFileSync('docs/lot-5-map-rows.json', 'utf8'));
+    const spots = validateSpots(JSON.parse(fs.readFileSync('public/data/parking-spots/lot-5.json', 'utf8')), 61);
+    assert.equal(spec.capacity, 61);
+    assert.equal(spots.length, 61);
+    assert.deepEqual(spots.map(spot => spot.id), Array.from({ length: 61 }, (_, i) => i + 1));
+    assert.deepEqual(spots, buildSpots(spec));
+    function contains(polygon, [x,y]) {
+        const point = [100 * x / spec.width, 100 * y / spec.height];
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const a = polygon[i], b = polygon[j];
+            if ((a[1] > point[1]) !== (b[1] > point[1]) &&
+                point[0] < (b[0] - a[0]) * (point[1] - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+        }
+        return inside;
+    }
+    assert.deepEqual(spec.existingSpotCenters.map(([id]) => id), spots.map(spot => spot.id));
+    for (const [id, point] of spec.existingSpotCenters) {
+        assert.ok(contains(spots[id - 1].polygon, point), `${id} stays at its existing physical bay`);
+    }
+    for (const point of [[320,520], [700,300], [150,15], [504,800], [326,559]]) {
+        assert.equal(spots.some(spot => contains(spot.polygon, point)), false, `${point} remains outside the existing bays`);
+    }
+    function overlaps(a, b) {
+        return [a, b].every(polygon => polygon.every((p, i) => {
+            const next = polygon[(i + 1) % polygon.length];
+            const nx = p[1] - next[1], ny = next[0] - p[0];
+            const pa = a.map(v => v[0] * nx + v[1] * ny);
+            const pb = b.map(v => v[0] * nx + v[1] * ny);
+            return Math.max(...pa) > Math.min(...pb) && Math.max(...pb) > Math.min(...pa);
+        }));
+    }
+    for (let i = 0; i < spots.length; i++) for (let j = i + 1; j < spots.length; j++) {
+        assert.equal(overlaps(spots[i].polygon, spots[j].polygon), false, `spots ${i + 1}/${j + 1}`);
+    }
+});
+
 test('coordinate files exist for the six remaining lots', () => {
     assert.deepEqual(lotIds, [1, 2, 3, 4, 5, 7]);
     lotIds.forEach(id => validateSpots(JSON.parse(fs.readFileSync(`public${spotFile(id)}`, 'utf8'))));

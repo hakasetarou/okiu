@@ -948,7 +948,7 @@ async function openInteractiveMap(lotId, imgSrc) {
             const strokeWidth = denseMap ? (isMySpot ? 0.16 : 0.08) : (isMySpot ? 0.6 : 0.3);
             const centerX = spot.polygon.reduce((sum, point) => sum + point[0], 0) / spot.polygon.length;
             const centerY = spot.polygon.reduce((sum, point) => sum + point[1], 0) / spot.polygon.length;
-            const numberLabel = denseMap || [4, 7].includes(Number(lotId))
+            const numberLabel = denseMap || [4, 5, 7].includes(Number(lotId))
                 ? `<text x="${centerX}" y="${centerY}" class="map-spot-number" text-anchor="middle" dominant-baseline="middle" style="font-size: ${denseMap && Number(lotId) !== 7 ? 0.45 : 0.9}px; fill: #173b23; ${Number(lotId) === 7 ? 'paint-order: stroke; stroke: white; stroke-width: 0.18px; stroke-linejoin: round;' : ''} pointer-events: none;">${spot.id}</text>`
                 : '';
             // ★修正ポイント2：polygonタグに id="spot-${lotId}-${spot.id}" を追加しました！
