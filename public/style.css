@@ -362,6 +362,13 @@ body {
     margin-bottom: 20px;
     border-radius: 8px;
     background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid #cbd5df;
+    cursor: zoom-in;
 }
 
 .lot-image {
@@ -405,6 +412,47 @@ body {
     cursor: pointer;
     z-index: 3001;
     text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* 番号一覧の閲覧用図面。既存の全画面マップのスタイルとは分離する。 */
+.numbered-diagram-canvas { position: relative; display: block; flex: none; line-height: 0; }
+.numbered-diagram-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.numbered-diagram-outline { fill: rgba(255,255,255,0.1); stroke: #526575; stroke-width: 0.5px; vector-effect: non-scaling-stroke; }
+.numbered-diagram-number { fill: #10283e; stroke: white; paint-order: stroke; stroke-linejoin: round; font-family: monospace; font-weight: bold; }
+.numbered-diagram-hint { margin: -10px 0 16px; font-size: 14px; line-height: 1.6; color: #384c60; }
+#lotDiagramOpen:focus-visible, #imageZoomModal button:focus-visible, #imageZoomViewport:focus-visible { outline: 3px solid #1376b9; outline-offset: -3px; }
+#lotDiagramOpen:disabled { cursor: wait; }
+#imageZoomModal { z-index: 5000; }
+#imageZoomModal .image-zoom-content {
+    display: grid;
+    grid-template-rows: auto minmax(0,1fr) auto;
+    width: calc(100% - 24px);
+    max-width: 1200px;
+    height: calc(100vh - 24px);
+    height: calc(100dvh - 24px);
+    max-height: none;
+    margin: 12px auto;
+    padding: 0;
+    background: #edf2f6;
+    align-items: stretch;
+    justify-content: stretch;
+}
+.numbered-diagram-header { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 8px 12px; background: #18364c; color: white; }
+#imageZoomTitle { margin: 0; font-size: 16px; line-height: 1.5; color: inherit; }
+#imageZoomModal .close-zoom-modal { position: static; flex: none; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 6px; background: #fff; color: #18364c; font-size: 30px; text-shadow: none; }
+.numbered-diagram-viewport { position: relative; min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; overscroll-behavior: none; touch-action: none; }
+#imageZoomCanvas .zoomed-image { width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; pointer-events: none; user-select: none; }
+.numbered-diagram-footer { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; justify-content: space-between; padding: 8px 12px max(8px,env(safe-area-inset-bottom)); background: white; }
+#imageZoomGuide { flex: 1 1 240px; margin: 0; font-size: 13px; line-height: 1.5; color: #384c60; }
+.numbered-diagram-controls { display: flex; gap: 8px; }
+.numbered-diagram-controls button { min-width: 44px; min-height: 44px; padding: 6px 12px; border: 1px solid #9daebb; border-radius: 6px; background: white; color: #18364c; font-size: 16px; }
+@media (max-width: 600px) {
+    #imageZoomModal .image-zoom-content { width: 100%; height: 100vh; height: 100dvh; margin: 0; border-radius: 0; }
+    .numbered-diagram-header { padding-top: max(8px,env(safe-area-inset-top)); }
+}
+@media (max-height: 480px) {
+    #imageZoomGuide { flex-basis: 140px; font-size: 12px; }
+    .numbered-diagram-footer { padding-top: 4px; }
 }
 
 /* --- 駐車場マップのマス目を2行表示に対応 --- */
@@ -713,24 +761,202 @@ body {
     position: fixed !important;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100%;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.95);
+    height: 100dvh;
+    background-color: #F0F5F2;
     z-index: 9999;
     display: none;
-    align-items: center;
-    justify-content: center;
+    overflow: hidden;
+    overscroll-behavior: none;
     margin: 0;
     padding: 0;
 }
 .map-zoom-content {
     position: relative;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+}
+.map-header {
+    display: grid;
+    align-items: center;
+    gap: 8px;
+    padding: max(4px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left));
+    background: #113A63;
+    color: white;
+}
+.map-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.map-search { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.map-search label { flex: none; font-size: 14px; font-weight: bold; }
+.map-search-input { flex: 1; min-width: 0; width: 100%; height: 42px; padding: 8px 10px; border: 1px solid #cad9e4; border-radius: 6px; color: #16364f; background: white; font-size: 16px; }
+.map-search-submit, .map-search-action { flex: none; min-height: 44px; padding: 8px 12px; border: 1px solid #b5cfdf; border-radius: 6px; background: white; color: #113a63; font-size: 14px; font-weight: bold; cursor: pointer; }
+.map-search-submit:disabled, .map-search-action:disabled { opacity: 0.65; cursor: wait; }
+.map-search-error { grid-column: 1 / -1; margin: 0; padding: 5px 8px; border-radius: 4px; background: #fff0ed; color: #8e231c; font-size: 13px; line-height: 1.4; }
+.map-search-error[hidden], .map-search-result[hidden], .map-search-action[hidden] { display: none; }
+.map-search-result { display: flex; flex: 1 1 100%; width: 100%; gap: 10px; align-items: center; padding: 6px 8px; border: 2px solid #1967d2; border-radius: 7px; background: #f6faff; }
+.map-search-result-info { flex: 1; min-width: 0; display: grid; gap: 2px; font-size: 13px; }
+.map-search-result-info strong { font-size: 14px; }
+.map-search-result-note { font-size: 11px; }
+.map-search-action { background: #113a63; color: white; border-color: #113a63; }
+.map-search-highlight { fill: none; stroke: #1967d2; stroke-width: 6px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.map-fullscreen-modal { height: var(--map-visible-height, 100dvh); }
+.map-search-editing .map-search-result, .map-search-editing .map-instruction { display: none; }
+.map-search-editing .map-controls { top: auto; bottom: 8px; transform: none; display: flex; gap: 4px; }
+@media (min-width: 769px) {
+    .map-header { grid-template-columns: minmax(0,1fr) minmax(280px,400px); gap: 4px 20px; }
+}
+@media (max-height: 480px) {
+    .map-search-result { padding: 3px 6px; gap: 6px; }
+    .map-search-result-note, .map-search-result:not([hidden]) ~ .map-instruction { display: none; }
+}
+.map-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: clamp(14px, 2vw, 18px);
+    line-height: 1.3;
+}
+.map-lot-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-capacity { flex-shrink: 0; white-space: nowrap; }
+.map-provisional { margin-left: 6px; font-size: 11px; font-weight: normal; }
+.map-close {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: white;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+}
+.map-close:hover { background: rgba(255,255,255,0.15); }
+.map-close:focus-visible { outline: 2px solid white; outline-offset: -3px; }
+.map-viewport {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    background: #F0F5F2;
+    overscroll-behavior: none;
+}
+#panzoom-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    flex-shrink: 0;
+    line-height: 0;
+    font-size: 0;
+}
+.map-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    pointer-events: none;
+    user-select: none;
+}
+.map-spots-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+.map-guide {
+    position: absolute;
+    z-index: 2;
+    top: 8px;
+    left: max(8px, env(safe-area-inset-left));
+    max-width: calc(100% - 88px);
+    margin: 0;
+    padding: 6px 8px;
+    border: 1px solid #d7e3dc;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.95);
+    color: #113A63;
+    font-size: 13px;
+    line-height: 1.4;
+    pointer-events: none;
+}
+.map-controls {
+    position: absolute;
+    z-index: 3;
+    top: 50%;
+    right: max(8px, env(safe-area-inset-right));
+    transform: translateY(-50%);
+    display: grid;
+    gap: 8px;
+}
+.map-controls button {
+    width: 56px;
+    min-height: 44px;
+    padding: 4px;
+    border: 1px solid #b7ccc0;
+    border-radius: 7px;
+    background: white;
+    color: #113A63;
+    box-shadow: 0 2px 5px rgba(17,58,99,0.14);
+    font: inherit;
+    font-size: 24px;
+    line-height: 1.2;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.map-controls .map-overview-button { font-size: 11px; white-space: nowrap; }
+.map-controls button:hover { background: #edf4f0; }
+.map-controls button:focus-visible { outline: 2px solid #113A63; outline-offset: 2px; }
+.map-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+    padding: 6px max(12px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    background: white;
+    border-top: 1px solid #d7e3dc;
+    color: #203e30;
+    font-size: 13px;
+    line-height: 1.4;
+}
+.map-legend { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.map-legend span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.map-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid; }
+.map-swatch-available { background: rgba(46,204,113,0.4); border-color: #2ecc71; }
+.map-swatch-occupied { background: rgba(231,76,60,0.6); border-color: #e74c3c; }
+.map-swatch-own { border: 2px solid #f1c40f; }
+.map-instruction { margin: 0; }
+body.parking-map-open { overscroll-behavior: none; }
+body.parking-map-open #checkoutModal { z-index: 10000; }
+body.parking-map-open #endTimeModal .modal-content,
+body.parking-map-open #checkoutModal .modal-content {
+    max-height: calc(100vh - 16px);
+    max-height: calc(100dvh - 16px);
+}
+@media (max-width: 600px) {
+    .map-heading { gap: 6px; }
+    .map-footer { flex-direction: column; gap: 2px; font-size: 12px; }
+    .map-guide { font-size: 12px; }
+}
+@media (max-height: 480px) {
+    .map-footer { gap: 2px 12px; padding-top: 4px; padding-bottom: max(4px, env(safe-area-inset-bottom)); font-size: 12px; }
+    body.parking-map-open #endTimeModal .modal-content,
+    body.parking-map-open #checkoutModal .modal-content { margin: 8px auto; }
 }
 
 /* =========================================

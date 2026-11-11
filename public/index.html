@@ -2,9 +2,9 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>沖縄国際大学 駐車場管理システム</title>
-    <link rel="stylesheet" href="style.css?v=1.9">
+    <link rel="stylesheet" href="style.css?v=2.1">
 </head>
 <body>
 
@@ -112,8 +112,14 @@
             <span id="closeDetailModalButton" class="close">&times;</span>
             <h2 id="lotDetailTitle"></h2>
 
-            <div class="lot-image-container">
-                <img id="lotDetailImage" src="" alt="駐車場画像" class="lot-image">
+            <div id="lotDiagramPanel">
+                <button type="button" id="lotDiagramOpen" class="lot-image-container" aria-label="番号付き図面を拡大して確認">
+                    <span id="lotDiagramCanvas" class="numbered-diagram-canvas">
+                        <img id="lotDetailImage" src="" alt="駐車場画像" class="lot-image">
+                        <svg id="lotDetailNumbers" class="numbered-diagram-overlay" aria-hidden="true"></svg>
+                    </span>
+                </button>
+                <p id="lotDiagramHint" class="numbered-diagram-hint" role="status"></p>
             </div>
             <p class="modal-instruction">空いているスペース（緑色）をクリックして駐車登録してください。</p>
             <div class="parking-map-container" id="parkingMap"></div>
@@ -138,10 +144,26 @@
         </div>
     </div>
 
-    <div id="imageZoomModal" class="modal">
+    <div id="imageZoomModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="imageZoomTitle">
         <div class="modal-content image-zoom-content">
-             <span class="close-zoom-modal">&times;</span>
-             <img id="zoomedImage" src="" alt="拡大画像" class="zoomed-image">
+            <header class="numbered-diagram-header">
+                <h2 id="imageZoomTitle">番号付き図面</h2>
+                <button type="button" class="close-zoom-modal" aria-label="図面を閉じる">&times;</button>
+            </header>
+            <div id="imageZoomViewport" class="numbered-diagram-viewport" tabindex="0" aria-label="図面。矢印キーで移動、プラスとマイナスで拡大縮小">
+                <div id="imageZoomCanvas" class="numbered-diagram-canvas">
+                    <img id="zoomedImage" src="" alt="拡大画像" class="zoomed-image">
+                    <svg id="zoomedNumbers" class="numbered-diagram-overlay" aria-hidden="true"></svg>
+                </div>
+            </div>
+            <footer class="numbered-diagram-footer">
+                <p id="imageZoomGuide" role="status">＋／－・ホイール・ピンチで拡大縮小、ドラッグで移動できます。</p>
+                <div class="numbered-diagram-controls" role="group" aria-label="番号付き図面の表示操作">
+                    <button type="button" id="imageZoomIn" aria-label="図面を拡大">＋</button>
+                    <button type="button" id="imageZoomOut" aria-label="図面を縮小">−</button>
+                    <button type="button" id="imageZoomReset">全体表示</button>
+                </div>
+            </footer>
         </div>
     </div>
 
@@ -187,7 +209,9 @@
     </div>
 </div>
 <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
-<script src="parking-map-data.js?v=1"></script>
-<script src="script.js?v=3.0"></script>
+<script src="parking-map-data.js?v=2"></script>
+<script src="numbered-diagram.js?v=1"></script>
+<script src="map-search.js?v=1"></script>
+<script src="script.js?v=3.2"></script>
 </body>
 </html>

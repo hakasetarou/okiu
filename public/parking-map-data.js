@@ -64,7 +64,97 @@
         return validateSpots(spots);
     }
 
-    const api = { lotIds, spotFile, validateSpots, rowSpots };
+    function percentile(values, fraction) {
+        if (!values.length || values.some(value => !Number.isFinite(value)) || fraction < 0 || fraction > 1) {
+            throw new Error('枠サイズの代表値を計算できません。');
+        }
+        const sorted = [...values].sort((a, b) => a - b);
+        const position = (sorted.length - 1) * fraction;
+        const index = Math.floor(position);
+        return sorted[index] + (sorted[Math.min(index + 1, sorted.length - 1)] - sorted[index]) * (position - index);
+    }
+
+    // 輪郭の細かい段差を短辺と誤認しないよう、外周を囲む最小面積の長方形を探す。
+    function polygonShortSide(points) {
+        const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+        const sorted = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        const half = sequence => {
+            const result = [];
+            sequence.forEach(point => {
+                while (result.length >= 2 && cross(result[result.length - 2], result[result.length - 1], point) <= 0) result.pop();
+                result.push(point);
+            });
+            return result.slice(0, -1);
+        };
+        const hull = half(sorted).concat(half([...sorted].reverse()));
+        let bestArea = Infinity;
+        let shortSide = 0;
+        hull.forEach((point, index) => {
+            const next = hull[(index + 1) % hull.length];
+            const length = Math.hypot(next[0] - point[0], next[1] - point[1]);
+            if (!length) return;
+            const ux = (next[0] - point[0]) / length, uy = (next[1] - point[1]) / length;
+            const horizontal = hull.map(p => p[0] * ux + p[1] * uy);
+            const vertical = hull.map(p => -p[0] * uy + p[1] * ux);
+            const width = Math.max(...horizontal) - Math.min(...horizontal);
+            const height = Math.max(...vertical) - Math.min(...vertical);
+            if (width * height < bestArea - 1e-10) {
+                bestArea = width * height;
+                shortSide = Math.min(width, height);
+            }
+        });
+        if (!(shortSide > 0) || !Number.isFinite(shortSide)) throw new Error('駐車枠の大きさを計算できません。');
+        return shortSide;
+    }
+
+    // 元画像のピクセル単位で一度だけ計算する。表示サイズ変更時はfitScaleを掛け直す。
+    function measureSpots(spots, width, height) {
+        if (![width, height].every(value => Number.isFinite(value) && value > 0)) throw new Error('地図画像のサイズが正しくありません。');
+        const measured = validateSpots(spots).map(spot => {
+            const polygon = spot.polygon.map(([x, y]) => [x * width / 100, y * height / 100]);
+            const center = polygon.reduce((sum, point) => [sum[0] + point[0] / polygon.length, sum[1] + point[1] / polygon.length], [0, 0]);
+            return { id: spot.id, polygon, center, shortSide: polygonShortSide(polygon) };
+        });
+        const sizes = measured.map(spot => spot.shortSide);
+        return { width, height, spots: measured, median: percentile(sizes, 0.5), lowerDecile: percentile(sizes, 0.1) };
+    }
+
+    function mapSizing(metrics, fitScale) {
+        if (!Number.isFinite(fitScale) || fitScale <= 0) throw new Error('地図の表示サイズが正しくありません。');
+        const shortSide = metrics.median * fitScale;
+        const maxScale = Math.min(16, Math.max(5, Math.ceil(32 / (metrics.lowerDecile * fitScale) * 1.3)));
+        return { shortSide, maxScale };
+    }
+
+    function zoomForPoint(metrics, fitScale, currentScale, point) {
+        const sizing = mapSizing(metrics, fitScale);
+        const nearby = metrics.spots.map(spot => ({ spot, distance: Math.hypot(spot.center[0] - point[0], spot.center[1] - point[1]) * fitScale * currentScale }))
+            .filter(item => item.distance <= 120).sort((a, b) => a.distance - b.distance || a.spot.id - b.spot.id).slice(0, 8);
+        const shortSide = (nearby.length ? percentile(nearby.map(item => item.spot.shortSide), 0.5) : metrics.median) * fitScale;
+        return { shortSide, displayedShortSide: shortSide * currentScale,
+            autoScale: Math.min(sizing.maxScale, Math.max(1, 32 / shortSide)),
+            maxScale: sizing.maxScale, nearbyIds: nearby.map(item => item.spot.id) };
+    }
+
+    function containsPoint(polygon, point) {
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+            const a = polygon[j], b = polygon[i];
+            const cross = (point[0] - a[0]) * (b[1] - a[1]) - (point[1] - a[1]) * (b[0] - a[0]);
+            if (Math.abs(cross) < 1e-8 && point[0] >= Math.min(a[0], b[0]) && point[0] <= Math.max(a[0], b[0]) &&
+                point[1] >= Math.min(a[1], b[1]) && point[1] <= Math.max(a[1], b[1])) return true;
+            if ((a[1] > point[1]) !== (b[1] > point[1]) && point[0] < (b[0] - a[0]) * (point[1] - a[1]) / (b[1] - a[1]) + a[0]) inside = !inside;
+        }
+        return inside;
+    }
+
+    function clampMapPan(pan, width, height, viewportWidth, viewportHeight, scale) {
+        const limitX = Math.max(0, (width - viewportWidth / scale) / 2);
+        const limitY = Math.max(0, (height - viewportHeight / scale) / 2);
+        return { x: Math.max(-limitX, Math.min(limitX, pan.x)), y: Math.max(-limitY, Math.min(limitY, pan.y)) };
+    }
+
+    const api = { lotIds, spotFile, validateSpots, rowSpots, percentile, measureSpots, mapSizing, zoomForPoint, containsPoint, clampMapPan };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     else root.ParkingMapData = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

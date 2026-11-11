@@ -1,0 +1,233 @@
+[
+  {
+    "name": "before-393x852",
+    "ok": true,
+    "viewport": [
+      393,
+      852
+    ],
+    "before": true,
+    "results": [],
+    "posts": [],
+    "error": null
+  },
+  {
+    "name": "after-393x852",
+    "ok": true,
+    "viewport": [
+      393,
+      852
+    ],
+    "before": false,
+    "results": [
+      {
+        "lot": 1,
+        "target": 265,
+        "fontPixels": 13.999475406124034,
+        "autoScale": 12.1689,
+        "guideVisible": true
+      },
+      {
+        "lot": 2,
+        "target": 100,
+        "fontPixels": 13.999912729319457,
+        "autoScale": 7.98745,
+        "guideVisible": true
+      },
+      {
+        "lot": 3,
+        "target": 353,
+        "fontPixels": 14.388653443905268,
+        "autoScale": 19.2478,
+        "guideVisible": true
+      },
+      {
+        "lot": 4,
+        "target": 39,
+        "fontPixels": 14.078908856818897,
+        "autoScale": 2.94841,
+        "guideVisible": true
+      },
+      {
+        "lot": 5,
+        "target": 31,
+        "fontPixels": 14.175508876956343,
+        "autoScale": 2.66042,
+        "guideVisible": true
+      },
+      {
+        "lot": 7,
+        "target": 52,
+        "fontPixels": 14.412016139692819,
+        "autoScale": 3.96926,
+        "guideVisible": true
+      },
+      {
+        "numberListCheckin": true,
+        "numberListCheckout": true
+      },
+      {
+        "existingMapFirstTap": true
+      }
+    ],
+    "posts": [
+      "/api/parking/checkin",
+      "/api/parking/checkout"
+    ],
+    "error": null
+  },
+  {
+    "name": "before-360x800",
+    "ok": true,
+    "viewport": [
+      360,
+      800
+    ],
+    "before": true,
+    "results": [],
+    "posts": [],
+    "error": null
+  },
+  {
+    "name": "after-360x800",
+    "ok": true,
+    "viewport": [
+      360,
+      800
+    ],
+    "before": false,
+    "results": [
+      {
+        "lot": 1,
+        "target": 265,
+        "fontPixels": 13.999528537242249,
+        "autoScale": 13.2844,
+        "guideVisible": true
+      },
+      {
+        "lot": 2,
+        "target": 100,
+        "fontPixels": 13.999873226921837,
+        "autoScale": 8.71964,
+        "guideVisible": true
+      },
+      {
+        "lot": 3,
+        "target": 353,
+        "fontPixels": 14.389100361144243,
+        "autoScale": 21.0122,
+        "guideVisible": true
+      },
+      {
+        "lot": 4,
+        "target": 39,
+        "fontPixels": 14.078788127634656,
+        "autoScale": 3.21868,
+        "guideVisible": true
+      },
+      {
+        "lot": 5,
+        "target": 31,
+        "fontPixels": 14.175659960479734,
+        "autoScale": 2.90429,
+        "guideVisible": true
+      },
+      {
+        "lot": 7,
+        "target": 52,
+        "fontPixels": 14.411915238403088,
+        "autoScale": 4.33311,
+        "guideVisible": true
+      },
+      {
+        "numberListCheckin": true,
+        "numberListCheckout": true
+      },
+      {
+        "existingMapFirstTap": true
+      }
+    ],
+    "posts": [
+      "/api/parking/checkin",
+      "/api/parking/checkout"
+    ],
+    "error": null
+  },
+  {
+    "name": "before-1366x768",
+    "ok": true,
+    "viewport": [
+      1366,
+      768
+    ],
+    "before": true,
+    "results": [],
+    "posts": [],
+    "error": null
+  },
+  {
+    "name": "after-1366x768",
+    "ok": true,
+    "viewport": [
+      1366,
+      768
+    ],
+    "before": false,
+    "results": [
+      {
+        "lot": 1,
+        "target": 265,
+        "fontPixels": 13.999799356395565,
+        "autoScale": 5.33842,
+        "guideVisible": true
+      },
+      {
+        "lot": 2,
+        "target": 100,
+        "fontPixels": 13.999920254998878,
+        "autoScale": 4.74939,
+        "guideVisible": true
+      },
+      {
+        "lot": 3,
+        "target": 353,
+        "fontPixels": 14.389007568071582,
+        "autoScale": 10.3756,
+        "guideVisible": true
+      },
+      {
+        "lot": 4,
+        "target": 39,
+        "fontPixels": 14.078829709788906,
+        "autoScale": 1.50951,
+        "guideVisible": true
+      },
+      {
+        "lot": 5,
+        "target": 31,
+        "fontPixels": 14.175955702470448,
+        "autoScale": 1.51554,
+        "guideVisible": true
+      },
+      {
+        "lot": 7,
+        "target": 52,
+        "fontPixels": 14.41223186193566,
+        "autoScale": 2.01094,
+        "guideVisible": true
+      },
+      {
+        "numberListCheckin": true,
+        "numberListCheckout": true
+      },
+      {
+        "existingMapFirstTap": true
+      }
+    ],
+    "posts": [
+      "/api/parking/checkin",
+      "/api/parking/checkout"
+    ],
+    "error": null
+  }
+]
