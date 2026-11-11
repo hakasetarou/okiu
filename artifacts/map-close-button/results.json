@@ -1,0 +1,426 @@
+[
+  {
+    "name": "after-393x852",
+    "ok": true,
+    "viewport": [
+      393,
+      852
+    ],
+    "before": false,
+    "results": [
+      {
+        "visibleMapEntries": 6,
+        "visibleNumberEntries": 0
+      },
+      {
+        "lot": 1,
+        "searched": 265,
+        "mode": "selection",
+        "labelPixels": 13.549851562499999,
+        "scale": 11,
+        "mapHeight": 609,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 2,
+        "searched": 100,
+        "mode": "selection",
+        "labelPixels": 13.357125,
+        "scale": 8,
+        "mapHeight": 609,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 3,
+        "searched": 128,
+        "mode": "selection",
+        "labelPixels": 18.908649539083246,
+        "scale": 16,
+        "mapHeight": 624,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 4,
+        "searched": 39,
+        "mode": "selection",
+        "labelPixels": 13.999903374865651,
+        "scale": 5,
+        "mapHeight": 624,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 5,
+        "searched": 31,
+        "mode": "selection",
+        "labelPixels": 13.999385306395592,
+        "scale": 4.83630397144775,
+        "mapHeight": 624,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 7,
+        "searched": 52,
+        "mode": "selection",
+        "labelPixels": 13.999527894437314,
+        "scale": 5,
+        "mapHeight": 624,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "inlineErrors": true,
+        "staleResultRejected": true,
+        "sharedCheckin": true,
+        "sharedCheckout": true,
+        "serverRejectionHandled": true,
+        "legacyNumberListRetained": true
+      }
+    ],
+    "posts": [
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "1",
+          "endTime": "15:30",
+          "layoutVersion": 2
+        }
+      },
+      {
+        "url": "/api/parking/checkout",
+        "body": {
+          "userId": "map-search-browser-test"
+        }
+      },
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "3",
+          "endTime": "16:00",
+          "layoutVersion": 2
+        }
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "after-360x800",
+    "ok": true,
+    "viewport": [
+      360,
+      800
+    ],
+    "before": false,
+    "results": [
+      {
+        "visibleMapEntries": 6,
+        "visibleNumberEntries": 0
+      },
+      {
+        "lot": 1,
+        "searched": 265,
+        "mode": "selection",
+        "labelPixels": 13.540499999999998,
+        "scale": 12,
+        "mapHeight": 537,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 2,
+        "searched": 100,
+        "mode": "selection",
+        "labelPixels": 12.2355,
+        "scale": 8,
+        "mapHeight": 537,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 3,
+        "searched": 128,
+        "mode": "selection",
+        "labelPixels": 18.909235250651836,
+        "scale": 16,
+        "mapHeight": 553,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 4,
+        "searched": 39,
+        "mode": "selection",
+        "labelPixels": 13.168828125,
+        "scale": 5,
+        "mapHeight": 537,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 5,
+        "searched": 31,
+        "mode": "selection",
+        "labelPixels": 13.999534362047909,
+        "scale": 5,
+        "mapHeight": 553,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 7,
+        "searched": 52,
+        "mode": "selection",
+        "labelPixels": 13.031015625000002,
+        "scale": 5,
+        "mapHeight": 537,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "inlineErrors": true,
+        "staleResultRejected": true,
+        "sharedCheckin": true,
+        "sharedCheckout": true,
+        "serverRejectionHandled": true,
+        "legacyNumberListRetained": true
+      }
+    ],
+    "posts": [
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "1",
+          "endTime": "15:30",
+          "layoutVersion": 2
+        }
+      },
+      {
+        "url": "/api/parking/checkout",
+        "body": {
+          "userId": "map-search-browser-test"
+        }
+      },
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "3",
+          "endTime": "16:00",
+          "layoutVersion": 2
+        }
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "after-852x393",
+    "ok": true,
+    "viewport": [
+      852,
+      393
+    ],
+    "before": false,
+    "results": [
+      {
+        "visibleMapEntries": 6,
+        "visibleNumberEntries": 0
+      },
+      {
+        "lot": 1,
+        "searched": 265,
+        "mode": "selection",
+        "labelPixels": 13.985999999999999,
+        "scale": 12,
+        "mapHeight": 259,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 2,
+        "searched": 100,
+        "mode": "selection",
+        "labelPixels": 12.8205,
+        "scale": 11,
+        "mapHeight": 259,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 3,
+        "searched": 128,
+        "mode": "selection",
+        "labelPixels": 18.648,
+        "scale": 16,
+        "mapHeight": 259,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 4,
+        "searched": 39,
+        "mode": "selection",
+        "labelPixels": 11.655,
+        "scale": 5,
+        "mapHeight": 259,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 5,
+        "searched": 31,
+        "mode": "selection",
+        "labelPixels": 11.655,
+        "scale": 5,
+        "mapHeight": 259,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 7,
+        "searched": 52,
+        "mode": "selection",
+        "labelPixels": 13.985999999999999,
+        "scale": 6,
+        "mapHeight": 259,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "inlineErrors": true,
+        "staleResultRejected": true,
+        "sharedCheckin": true,
+        "sharedCheckout": true,
+        "serverRejectionHandled": true,
+        "legacyNumberListRetained": true
+      }
+    ],
+    "posts": [
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "1",
+          "endTime": "15:30",
+          "layoutVersion": 2
+        }
+      },
+      {
+        "url": "/api/parking/checkout",
+        "body": {
+          "userId": "map-search-browser-test"
+        }
+      },
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "3",
+          "endTime": "16:00",
+          "layoutVersion": 2
+        }
+      }
+    ],
+    "error": null
+  },
+  {
+    "name": "after-1366x768",
+    "ok": true,
+    "viewport": [
+      1366,
+      768
+    ],
+    "before": false,
+    "results": [
+      {
+        "visibleMapEntries": 6,
+        "visibleNumberEntries": 0
+      },
+      {
+        "lot": 1,
+        "searched": 265,
+        "mode": "selection",
+        "labelPixels": 13.68,
+        "scale": 5,
+        "mapHeight": 608,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 2,
+        "searched": 100,
+        "mode": "selection",
+        "labelPixels": 13.68,
+        "scale": 5,
+        "mapHeight": 608,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 3,
+        "searched": 128,
+        "mode": "selection",
+        "labelPixels": 18.90927685546875,
+        "scale": 7.682935442266578,
+        "mapHeight": 608,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 4,
+        "searched": 39,
+        "mode": "selection",
+        "labelPixels": 14.000000083923341,
+        "scale": 2.8275571734391574,
+        "mapHeight": 608,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 5,
+        "searched": 31,
+        "mode": "selection",
+        "labelPixels": 14.000000083923341,
+        "scale": 2.827557173439157,
+        "mapHeight": 608,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "lot": 7,
+        "searched": 52,
+        "mode": "selection",
+        "labelPixels": 14.000000083923341,
+        "scale": 2.8275571734391574,
+        "mapHeight": 608,
+        "searchAction": "この駐車枠を選択"
+      },
+      {
+        "inlineErrors": true,
+        "staleResultRejected": true,
+        "sharedCheckin": true,
+        "sharedCheckout": true,
+        "serverRejectionHandled": true,
+        "legacyNumberListRetained": true
+      }
+    ],
+    "posts": [
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "1",
+          "endTime": "15:30",
+          "layoutVersion": 2
+        }
+      },
+      {
+        "url": "/api/parking/checkout",
+        "body": {
+          "userId": "map-search-browser-test"
+        }
+      },
+      {
+        "url": "/api/parking/checkin",
+        "body": {
+          "userId": "map-search-browser-test",
+          "lotId": "5",
+          "spaceId": "3",
+          "endTime": "16:00",
+          "layoutVersion": 2
+        }
+      }
+    ],
+    "error": null
+  }
+]

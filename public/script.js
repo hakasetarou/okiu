@@ -1497,8 +1497,10 @@ async function openInteractiveMap(lotId, imgSrc) {
                         <span class="map-lot-name">${escapeMapText(name)}</span>
                         <span class="map-capacity">${lot.capacity}台${provisional ? '<small class="map-provisional">暫定</small>' : ''}</span>
                     </h2>
-                    <button type="button" class="map-close" aria-label="マップを閉じる" onclick="closeInteractiveMap()">&times;</button>
                     </div>
+                    <button type="button" class="map-close" aria-label="マップを閉じる" onclick="closeInteractiveMap()">
+                        <span class="map-close-icon" aria-hidden="true">&times;</span><span>閉じる</span>
+                    </button>
                     <form class="map-search panzoom-exclude" aria-label="駐車枠番号で探す">
                         <label for="map-space-number">枠番号</label>
                         <input id="map-space-number" class="map-search-input" type="text" inputmode="numeric" enterkeyhint="search" autocomplete="off" placeholder="例：128" aria-describedby="map-search-error" maxlength="12">

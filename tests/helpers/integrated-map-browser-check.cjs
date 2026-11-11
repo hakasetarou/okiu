@@ -8,7 +8,7 @@ const { spawn } = require('node:child_process');
 const root = path.resolve(__dirname, '../..');
 const library = process.argv[2], baseline = process.argv[3] && !process.argv[3].startsWith('--') ? process.argv[3] : null;
 if (!library || !fs.existsSync(library)) throw new Error('確認用のPanzoom 4.5.1のファイルを指定してください。');
-const artifacts = path.join(root, 'artifacts/integrated-map');
+const artifacts = path.join(root, process.env.MAP_QA_ARTIFACTS || 'artifacts/integrated-map');
 fs.mkdirSync(artifacts, { recursive: true });
 const app = express();
 const counts = { 1:530, 2:205, 3:706, 4:78, 5:61, 7:104 };
@@ -76,7 +76,8 @@ async function run() {
                 await send('Page.enable',{},sessionId);await send('Target.activateTarget',{targetId});
                 await send('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/qa${before?'?before=1':''}`},sessionId);
                 let report;
-                for(let attempt=0;attempt<120;attempt++){
+                // 全6駐車場と画面回転を連続確認するため、描画待ちも含めて60秒確保する。
+                for(let attempt=0;attempt<240;attempt++){
                     await new Promise(resolve=>setTimeout(resolve,250));
                     const hook=await send('Runtime.evaluate',{expression:'JSON.stringify({shot:window.__qaShot,enter:window.__qaEnter,resize:window.__qaResize})',returnByValue:true},sessionId);
                     const requested=JSON.parse(hook.result.value||'{}');

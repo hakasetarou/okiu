@@ -89,10 +89,12 @@ module.exports = async function browserChecks(data, before, expectHidden) {
             const input=view.searchNodes.input.getBoundingClientRect(),close=view.modal.querySelector('.map-close').getBoundingClientRect();
             check(header.top>=-1&&footer.bottom<=innerHeight+1&&view.viewport.clientHeight>80,'表示領域・凡例が見切れ');
             check(input.right<=close.left||input.left>=close.right||input.top>=close.bottom||input.bottom<=close.top,'入力欄と閉じる部品が重なる');
+            check(Math.abs(header.right-close.right-parseFloat(getComputedStyle(view.modal.querySelector('.map-header')).paddingRight))<=1,'閉じるボタンがヘッダー右端にない');
+            check(close.width>=88&&close.height>=44&&view.modal.querySelector('.map-close').textContent.includes('閉じる'),'閉じるボタンの文言・操作面積が不足');
             results.push({lot:lot.id,searched:number,mode:view.mode,labelPixels,scale:view.panzoom.getScale(),mapHeight:view.viewport.clientHeight,searchAction:view.searchNodes.action.textContent});
             view.modal.querySelector('[data-map-action="overview"]').click();await frames();
             check(!view.selectedNumber&&!view.searchHighlight&&view.searchNodes.result.hidden,'全体表示で検索が残った');
-            closeInteractiveMap();check(document.body.style.position!=='fixed','背景スクロールが復元されない');
+            view.modal.querySelector('.map-close').click();check(document.body.style.position!=='fixed','背景スクロールが復元されない');
         }
         let view=await open(2);
         for(const value of ['',0,-1,'1.5','100abc',206]){await submit(view,value);check(!view.searchNodes.error.hidden,'入力エラーが表示されない');check(!view.selectedNumber,'失敗時に結果が残る');}

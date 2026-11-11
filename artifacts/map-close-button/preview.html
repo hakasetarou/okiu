@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>閉じるボタンの改善前後</title>
+<style>
+body { margin: 24px; font: 16px/1.6 system-ui, sans-serif; background: #f0f5f2; color: #16364f; }
+h1 { font-size: 24px; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+figure { margin: 0 0 24px; }
+figcaption { margin-bottom: 8px; font-weight: bold; }
+img { display: block; max-width: 100%; max-height: 720px; border: 1px solid #c4d3dc; }
+@media (max-width: 700px) { .pair { grid-template-columns: 1fr; } }
+</style>
+<h1>閉じるボタンの改善前後</h1>
+<p>閉じるボタンをヘッダー右端に配置し、「× 閉じる」の文字と境界線を追加しました。同じ駐車場・番号・画面寸法の比較です。画像を押すと原寸を開きます。</p>
+<h2>PC：1366×768px</h2>
+<div class="pair">
+<figure><figcaption>改善前：検索欄の左側にある×</figcaption><a href="../integrated-map/after-1366x768.png"><img src="../integrated-map/after-1366x768.png" alt="改善前のPCマップ画面"></a></figure>
+<figure><figcaption>改善後：右端の「× 閉じる」</figcaption><a href="after-1366x768.png"><img src="after-1366x768.png" alt="改善後のPCマップ画面"></a></figure>
+</div>
+<h2>スマートフォン相当：393×852px</h2>
+<div class="pair">
+<figure><figcaption>改善前：×だけの表示</figcaption><a href="../integrated-map/after-393x852.png"><img src="../integrated-map/after-393x852.png" alt="改善前のスマートフォン幅のマップ画面"></a></figure>
+<figure><figcaption>改善後：文字と境界線で操作を明確化</figcaption><a href="after-393x852.png"><img src="after-393x852.png" alt="改善後のスマートフォン幅のマップ画面"></a></figure>
+</div>
+<p>実Edgeの自動操作による表示記録です。スマートフォン実機での確認は未実施です。</p>
+</html>

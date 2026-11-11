@@ -784,14 +784,16 @@ body {
 }
 .map-header {
     display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title close" "search search";
     align-items: center;
     gap: 8px;
     padding: max(4px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 4px max(12px, env(safe-area-inset-left));
     background: #113A63;
     color: white;
 }
-.map-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.map-search { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.map-title-row { grid-area: title; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.map-search { grid-area: search; display: flex; gap: 8px; align-items: center; min-width: 0; }
 .map-search label { flex: none; font-size: 14px; font-weight: bold; }
 .map-search-input { flex: 1; min-width: 0; width: 100%; height: 42px; padding: 8px 10px; border: 1px solid #cad9e4; border-radius: 6px; color: #16364f; background: white; font-size: 16px; }
 .map-search-submit, .map-search-action { flex: none; min-height: 44px; padding: 8px 12px; border: 1px solid #b5cfdf; border-radius: 6px; background: white; color: #113a63; font-size: 14px; font-weight: bold; cursor: pointer; }
@@ -808,7 +810,11 @@ body {
 .map-search-editing .map-search-result, .map-search-editing .map-instruction { display: none; }
 .map-search-editing .map-controls { top: auto; bottom: 8px; transform: none; display: flex; gap: 4px; }
 @media (min-width: 769px) {
-    .map-header { grid-template-columns: minmax(0,1fr) minmax(280px,400px); gap: 4px 20px; }
+    .map-header {
+        grid-template-columns: minmax(0,1fr) minmax(280px,400px) auto;
+        grid-template-areas: "title search close";
+        gap: 4px 20px;
+    }
 }
 @media (max-height: 480px) {
     .map-search-result { padding: 3px 6px; gap: 6px; }
@@ -828,19 +834,27 @@ body {
 .map-capacity { flex-shrink: 0; white-space: nowrap; }
 .map-provisional { margin-left: 6px; font-size: 11px; font-weight: normal; }
 .map-close {
-    flex: 0 0 44px;
-    width: 44px;
+    grid-area: close;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 88px;
     height: 44px;
-    padding: 0;
-    border: 0;
+    padding: 0 10px;
+    border: 1px solid rgba(255,255,255,0.6);
     border-radius: 6px;
-    background: transparent;
+    background: rgba(255,255,255,0.1);
     color: white;
-    font-size: 32px;
+    font-size: 14px;
+    font-weight: bold;
     line-height: 1;
+    white-space: nowrap;
     cursor: pointer;
 }
-.map-close:hover { background: rgba(255,255,255,0.15); }
+.map-close-icon { font-size: 24px; font-weight: normal; }
+.map-close:hover { background: rgba(255,255,255,0.2); }
 .map-close:focus-visible { outline: 2px solid white; outline-offset: -3px; }
 .map-viewport {
     position: relative;
